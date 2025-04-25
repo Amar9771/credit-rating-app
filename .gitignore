@@ -1,0 +1,11 @@
+# Byte-compiled / cache files
+__pycache__/
+*.py[cod]
+
+# Model / encoder files
+*.pkl
+
+# OS / editor files
+Thumbs.db
+.DS_Store
+	
