@@ -171,6 +171,9 @@ if st.button("🔍 Predict Credit Rating"):
         st.session_state.interest_coverage = 0.0
         st.session_state.issue_size = 0.0
 
+        # Trigger a rerun to reset the fields immediately
+        st.experimental_rerun()
+
     except Exception as e:
         st.error(f"❌ Prediction error: {e}")
 st.markdown('</div>', unsafe_allow_html=True)
