@@ -16,10 +16,14 @@ st.markdown("""
     }
     .block-container {
         max-width: 700px;
+        /* pull up so top border sits flush */
         margin: -2px auto 1rem !important;
+        /* full green border */
         border: 2px solid #4CAF50 !important;
+        /* remove rounding at top corners so border shows */
         border-top-left-radius: 0 !important;
         border-top-right-radius: 0 !important;
+        /* keep rounding on bottom corners */
         border-bottom-left-radius: 15px !important;
         border-bottom-right-radius: 15px !important;
         background-color: white;
@@ -80,9 +84,9 @@ st.markdown("""
 """, unsafe_allow_html=True)
 
 # 4) Load model and encoders
-model = joblib.load('credit_rating_model.pkl')
-rating_encoder = joblib.load('rating_encoder.pkl')
-issuer_encoder = joblib.load('issuer_encoder.pkl')
+model            = joblib.load('credit_rating_model.pkl')
+rating_encoder   = joblib.load('rating_encoder.pkl')
+issuer_encoder   = joblib.load('issuer_encoder.pkl')
 industry_encoder = joblib.load('industry_encoder.pkl')
 
 # 5) CSV setup
@@ -92,8 +96,10 @@ columns = [
     'Interest Coverage','Issue Size (₹Cr)','Predicted Rating'
 ]
 
-# Ensure the directory exists before trying to create the file
-os.makedirs(os.path.dirname(historical_data_path), exist_ok=True)
+# Ensure the directory for the CSV exists
+directory = os.path.dirname(historical_data_path)
+if directory and not os.path.exists(directory):
+    os.makedirs(directory, exist_ok=True)
 
 # Check if file exists and create if not
 if not os.path.exists(historical_data_path):
@@ -103,12 +109,12 @@ if not os.path.exists(historical_data_path):
 col1, col2 = st.columns([1, 2])
 with col1:
     issuer_name = st.text_input("🏢 Issuer Name")
-    industry = st.selectbox("🏭 Industry", sorted(industry_encoder.classes_))
+    industry    = st.selectbox("🏭 Industry", sorted(industry_encoder.classes_))
 with col2:
-    debt_to_equity = st.number_input("📉 Debt to Equity Ratio", step=0.01)
-    ebitda_margin = st.number_input("💰 EBITDA Margin (%)", step=0.01)
+    debt_to_equity    = st.number_input("📉 Debt to Equity Ratio", step=0.01)
+    ebitda_margin     = st.number_input("💰 EBITDA Margin (%)", step=0.01)
     interest_coverage = st.number_input("🧾 Interest Coverage Ratio", step=0.01)
-    issue_size = st.number_input("📦 Issue Size (₹ Crores)", step=1.0)
+    issue_size        = st.number_input("📦 Issue Size (₹ Crores)", step=1.0)
 
 # 7) Predict Button Logic
 st.markdown('<div style="text-align: center; margin-top: 2rem;">', unsafe_allow_html=True)
@@ -129,16 +135,14 @@ if st.button("🔍 Predict Credit Rating"):
 
         # Append to CSV
         new_row = pd.DataFrame({
-            'Issuer Name': [issuer_name],
-            'Industry': [industry],
-            'Debt to Equity': [debt_to_equity],
-            'EBITDA Margin': [ebitda_margin],
+            'Issuer Name':       [issuer_name],
+            'Industry':          [industry],
+            'Debt to Equity':    [debt_to_equity],
+            'EBITDA Margin':     [ebitda_margin],
             'Interest Coverage': [interest_coverage],
-            'Issue Size (₹Cr)': [issue_size],
-            'Predicted Rating': [rating]
+            'Issue Size (₹Cr)':  [issue_size],
+            'Predicted Rating':  [rating]
         })
-
-        # Append the new row to the CSV file
         new_row.to_csv(historical_data_path, mode='a', header=False, index=False)
 
     except Exception as e:
@@ -148,11 +152,8 @@ st.markdown('</div>', unsafe_allow_html=True)
 # 8) Show historical data
 st.markdown('<div class="historical-data">', unsafe_allow_html=True)
 with st.expander("📜 Show Historical Data"):
-    try:
-        hist_df = pd.read_csv(historical_data_path)
-        st.dataframe(hist_df)
-    except Exception as e:
-        st.error(f"❌ Error loading historical data: {e}")
+    hist_df = pd.read_csv(historical_data_path)
+    st.dataframe(hist_df)
 st.markdown('</div>', unsafe_allow_html=True)
 
 # 9) Footer
