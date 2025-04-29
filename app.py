@@ -90,13 +90,14 @@ issuer_encoder   = joblib.load('issuer_encoder.pkl')
 industry_encoder = joblib.load('industry_encoder.pkl')
 
 # 5) CSV setup
-historical_data_path = r'F:\credit_rating_app\Simulated_CreditRating_Data.csv'
+historical_data_path = 'Simulated_CreditRating_Data.csv'  # Use local path
 columns = [
     'Issuer Name','Industry','Debt to Equity','EBITDA Margin',
     'Interest Coverage','Issue Size (₹Cr)','Predicted Rating'
 ]
+
+# Check if file exists and create if not
 if not os.path.exists(historical_data_path):
-    os.makedirs(os.path.dirname(historical_data_path), exist_ok=True)
     pd.DataFrame(columns=columns).to_csv(historical_data_path, index=False)
 
 # 6) Input form
@@ -122,7 +123,7 @@ if st.button("🔍 Predict Credit Rating"):
         industry_idx = industry_encoder.transform([industry])[0]
         X_new = np.array([[debt_to_equity, ebitda_margin,
                            interest_coverage, issue_size,
-                           issuer_idx, industry_idx]])
+                           issuer_idx, industry_idx]]).reshape(1, -1)
         y_pred = model.predict(X_new)
         rating = rating_encoder.inverse_transform(y_pred)[0]
         st.success(f"🎯 Predicted Credit Rating: **{rating}**")
