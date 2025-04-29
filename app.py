@@ -162,7 +162,7 @@ if st.button("🔍 Predict Credit Rating"):
         })
         new_row.to_csv(historical_data_path, mode='a', header=False, index=False)
 
-        # Clear fields in session state for new input
+        # Clear session state values after prediction
         st.session_state.issuer_name = ""
         st.session_state.industry = industry_encoder.classes_[0]
         st.session_state.default_flag = 0
@@ -171,8 +171,8 @@ if st.button("🔍 Predict Credit Rating"):
         st.session_state.interest_coverage = 0.0
         st.session_state.issue_size = 0.0
 
-        # Refresh the page manually by resetting the state (this is automatic when session_state changes)
-        st.experimental_rerun()  # We can keep this for refreshing if needed
+        # Trigger a rerun to refresh inputs (this will clear input fields)
+        st.rerun()
 
     except Exception as e:
         st.error(f"❌ Prediction error: {e}")
