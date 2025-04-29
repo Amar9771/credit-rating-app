@@ -65,19 +65,19 @@ rating_encoder   = joblib.load('rating_encoder.pkl')
 issuer_encoder   = joblib.load('issuer_encoder.pkl')
 industry_encoder = joblib.load('industry_encoder.pkl')
 
-# 5) CSV setup (with DefaultFlag + Final Rating)
+# 5) CSV setup (with DefaultFlag + Predicted Rating)
 data_dir = os.path.join(os.getcwd(), 'data')
 os.makedirs(data_dir, exist_ok=True)
 
 historical_data_path = os.path.join(data_dir, 'Simulated_CreditRating_Data.csv')
 columns = [
     'Issuer Name','Industry','Debt to Equity','EBITDA Margin',
-    'Interest Coverage','Issue Size (₹Cr)','DefaultFlag','Final Rating'
+    'Interest Coverage','Issue Size (₹Cr)','DefaultFlag','Predicted Rating'
 ]
 if not os.path.exists(historical_data_path):
     pd.DataFrame(columns=columns).to_csv(historical_data_path, index=False)
 
-# 6) Input form (now with DefaultFlag)
+# 6) Input form (with DefaultFlag)
 col1, col2 = st.columns([1, 2])
 with col1:
     issuer_name  = st.text_input("🏢 Issuer Name")
@@ -106,7 +106,7 @@ if st.button("🔍 Predict Credit Rating"):
         rating = rating_encoder.inverse_transform(y_pred)[0]
         st.success(f"🎯 Predicted Credit Rating: **{rating}**")
 
-        # append to CSV
+        # append to CSV under "Predicted Rating"
         new_row = pd.DataFrame([{
             'Issuer Name':       issuer_name,
             'Industry':          industry,
@@ -115,7 +115,7 @@ if st.button("🔍 Predict Credit Rating"):
             'Interest Coverage': interest_coverage,
             'Issue Size (₹Cr)':  issue_size,
             'DefaultFlag':       default_flag,
-            'Final Rating':      rating
+            'Predicted Rating':  rating
         }])
         new_row.to_csv(historical_data_path, mode='a', header=False, index=False)
 
