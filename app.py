@@ -29,12 +29,13 @@ st.markdown("""
 
 # 4) Load model & encoders
 try:
-    model            = joblib.load('credit_rating_model.pkl')
-    rating_encoder   = joblib.load('rating_encoder.pkl')
-    issuer_encoder   = joblib.load('issuer_encoder.pkl')
+    st.write("🔄 Attempting to load the model and encoders...")
+    model = joblib.load('credit_rating_model.pkl')
+    rating_encoder = joblib.load('rating_encoder.pkl')
+    issuer_encoder = joblib.load('issuer_encoder.pkl')
     industry_encoder = joblib.load('industry_encoder.pkl')
 except Exception as e:
-    st.error("❌ Failed to load model or encoders:\n" + traceback.format_exc())
+    st.error(f"❌ Failed to load model or encoders:\n{str(e)}")
     st.stop()
 
 # 5) Historical CSV setup
@@ -50,14 +51,14 @@ if not os.path.exists(hist_csv):
         pd.DataFrame(columns=cols).to_csv(hist_csv, index=False)
         st.info(f"ℹ️ Created new history file at `{hist_csv}`")
     except Exception as e:
-        st.error("❌ Could not create history file:\n" + traceback.format_exc())
+        st.error(f"❌ Could not create history file:\n{str(e)}")
         st.stop()
 
 # Load history
 try:
     hist_df = pd.read_csv(hist_csv)
 except Exception as e:
-    st.warning("⚠️ Could not load historical data:\n" + str(e))
+    st.warning(f"⚠️ Could not load historical data:\n{str(e)}")
     hist_df = pd.DataFrame(columns=cols)
 
 # Show preview
@@ -68,12 +69,12 @@ st.dataframe(hist_df.head())
 col1, col2 = st.columns(2)
 with col1:
     issuer_name = st.text_input("🏢 Issuer Name")
-    industry    = st.selectbox("🏭 Industry", sorted(industry_encoder.classes_))
+    industry = st.selectbox("🏭 Industry", sorted(industry_encoder.classes_))
 with col2:
-    debt_to_equity    = st.number_input("📉 Debt to Equity Ratio", step=0.01)
-    ebitda_margin     = st.number_input("💰 EBITDA Margin (%)", step=0.01)
+    debt_to_equity = st.number_input("📉 Debt to Equity Ratio", step=0.01)
+    ebitda_margin = st.number_input("💰 EBITDA Margin (%)", step=0.01)
     interest_coverage = st.number_input("🧾 Interest Coverage Ratio", step=0.01)
-    issue_size        = st.number_input("📦 Issue Size (₹ Crores)", step=1.0)
+    issue_size = st.number_input("📦 Issue Size (₹ Crores)", step=1.0)
 
 # 7) Prediction
 if st.button("🔍 Predict Credit Rating"):
@@ -101,19 +102,19 @@ if st.button("🔍 Predict Credit Rating"):
 
         # append to CSV
         new_row = pd.DataFrame([{
-            'Issuer Name':       issuer_name,
-            'Industry':          industry,
-            'Debt to Equity':    debt_to_equity,
-            'EBITDA Margin':     ebitda_margin,
+            'Issuer Name': issuer_name,
+            'Industry': industry,
+            'Debt to Equity': debt_to_equity,
+            'EBITDA Margin': ebitda_margin,
             'Interest Coverage': interest_coverage,
-            'Issue Size (₹Cr)':  issue_size,
-            'Predicted Rating':  rating
+            'Issue Size (₹Cr)': issue_size,
+            'Predicted Rating': rating
         }])
         new_row.to_csv(hist_csv, mode='a', header=False, index=False)
         st.info("✅ Saved prediction to history.")
 
     except Exception as e:
-        st.error("❌ Prediction error:\n" + traceback.format_exc())
+        st.error(f"❌ Prediction error:\n{str(e)}")
 
 # 8) Show full historical data
 with st.expander("📜 Full Historical Data"):
