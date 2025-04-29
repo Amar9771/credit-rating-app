@@ -7,6 +7,10 @@ import pandas as pd
 # 1) Streamlit page configuration (must be first)
 st.set_page_config(page_title="Credit Rating Predictor", layout="centered")
 
+# 1a) Debug: show working directory and files
+st.write("🗂️ Current working directory:", os.getcwd())
+st.write("📁 Files in directory:", os.listdir())
+
 # 2) Custom CSS for a professional, official look
 st.markdown("""
 <style>
