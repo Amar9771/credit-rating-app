@@ -109,26 +109,29 @@ with col2:
 st.markdown('<div style="text-align: center; margin-top: 2rem;">', unsafe_allow_html=True)
 if st.button("🔍 Predict Credit Rating"):
     try:
+        # Ensure issuer is encoded correctly
         if issuer_name in issuer_encoder.classes_:
             issuer_idx = issuer_encoder.transform([issuer_name])[0]
         else:
-            issuer_idx = -1  # handle unknown issuer
+            issuer_idx = -1  # handle unknown issuer (or you could show a warning)
 
+        # Encode industry correctly
         industry_idx = industry_encoder.transform([industry])[0]
 
-        # Ensure all 7 features are included
+        # Prepare input features for prediction
         X_new = np.array([[debt_to_equity, ebitda_margin, interest_coverage, issue_size,
                            issuer_idx, industry_idx]]).reshape(1, -1)
 
-        # Check if features length matches model expectation
+        # Check if features match the model's expectations
         if X_new.shape[1] != model.n_features_in_:
             raise ValueError(f"Input features mismatch: Expected {model.n_features_in_} features, but got {X_new.shape[1]}")
 
+        # Perform prediction
         y_pred = model.predict(X_new)
         rating = rating_encoder.inverse_transform(y_pred)[0]
         st.success(f"🎯 Predicted Credit Rating: **{rating}**")
 
-        # Append to CSV
+        # Append to CSV (historical data)
         new_row = pd.DataFrame({
             'Issuer Name': [issuer_name],
             'Industry': [industry],
