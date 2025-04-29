@@ -121,6 +121,11 @@ default_flag_num = 1 if st.session_state['default_flag'] == "Yes" else 0
 # 7) Prediction logic
 if st.button("🔍 Predict Credit Rating"):
     try:
+        # Ensure all features are filled out
+        if not (issuer_name and debt_to_equity > 0 and ebitda_margin > 0 and interest_coverage > 0 and issue_size > 0):
+            st.error("❌ Please fill out all fields correctly!")
+            return
+
         # Encode issuer (unknown issuers mapped to -1)
         issuer_val = st.session_state['issuer_name']
         if issuer_val in issuer_encoder.classes_:
@@ -130,7 +135,7 @@ if st.button("🔍 Predict Credit Rating"):
 
         industry_idx = industry_encoder.transform([st.session_state['industry']])[0]
 
-        # Prepare feature vector
+        # Prepare feature vector (make sure to include all features)
         X_new = np.array([[
             issuer_idx,
             industry_idx,
@@ -140,6 +145,9 @@ if st.button("🔍 Predict Credit Rating"):
             st.session_state['issue_size'],
             default_flag_num
         ]])
+
+        # Debugging: check the input features
+        st.write("🔍 Feature Vector for Prediction:", X_new)
 
         # Predict
         y_pred = model.predict(X_new)
