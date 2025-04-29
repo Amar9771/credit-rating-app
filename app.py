@@ -7,6 +7,10 @@ import pandas as pd
 # 1) Streamlit page configuration (must be first)
 st.set_page_config(page_title="Credit Rating Predictor", layout="centered")
 
+# 1a) Debug: show working directory and files
+st.write("🗂️ Current working directory:", os.getcwd())
+st.write("📁 Files in directory:", os.listdir())
+
 # 2) Custom CSS for a professional, official look
 st.markdown("""
 <style>
@@ -64,8 +68,9 @@ st.markdown("""
 </div>
 """, unsafe_allow_html=True)
 
-# 4) Load model and encoders
+# 4) Load model and encoders with debug
 try:
+    st.write("🔄 Model & encoder files detected?", [f for f in os.listdir() if f.endswith('.pkl')])
     model            = joblib.load('credit_rating_model.pkl')
     rating_encoder   = joblib.load('rating_encoder.pkl')
     issuer_encoder   = joblib.load('issuer_encoder.pkl')
@@ -87,7 +92,7 @@ if not os.path.exists(hist_csv):
 if 'issuer_name' not in st.session_state:
     st.session_state['issuer_name'] = ''
 if 'industry' not in st.session_state:
-    st.session_state['industry'] = industry_encoder.classes_[0]
+    st.session_state['industry'] = None
 if 'default_flag' not in st.session_state:
     st.session_state['default_flag'] = 'No'
 if 'debt_to_equity' not in st.session_state:
@@ -117,14 +122,15 @@ default_flag_num = 1 if st.session_state['default_flag'] == "Yes" else 0
 if st.button("🔍 Predict Credit Rating"):
     try:
         # Encode issuer (unknown issuers mapped to -1)
-        if st.session_state['issuer_name'] in issuer_encoder.classes_:
-            issuer_idx = issuer_encoder.transform([st.session_state['issuer_name']])[0]
+        issuer_val = st.session_state['issuer_name']
+        if issuer_val in issuer_encoder.classes_:
+            issuer_idx = issuer_encoder.transform([issuer_val])[0]
         else:
             issuer_idx = -1
 
         industry_idx = industry_encoder.transform([st.session_state['industry']])[0]
 
-        # Prepare feature vector in same order as training
+        # Prepare feature vector
         X_new = np.array([[
             issuer_idx,
             industry_idx,
@@ -135,12 +141,6 @@ if st.button("🔍 Predict Credit Rating"):
             default_flag_num
         ]])
 
-        # Verify feature count
-        if X_new.shape[1] != model.n_features_in_:
-            raise ValueError(
-                f"Input features mismatch: Expected {model.n_features_in_} features, but got {X_new.shape[1]}"
-            )
-
         # Predict
         y_pred = model.predict(X_new)
         rating = rating_encoder.inverse_transform(y_pred)[0]
@@ -148,7 +148,7 @@ if st.button("🔍 Predict Credit Rating"):
 
         # Append to CSV
         new_row = pd.DataFrame([{  
-            'Issuer Name':    st.session_state['issuer_name'],
+            'Issuer Name':    issuer_val,
             'Industry':       st.session_state['industry'],
             'Debt to Equity': st.session_state['debt_to_equity'],
             'EBITDA Margin':  st.session_state['ebitda_margin'],
