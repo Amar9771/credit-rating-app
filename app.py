@@ -7,7 +7,7 @@ import pandas as pd
 # 1) Set Streamlit page config
 st.set_page_config(page_title="Credit Rating Predictor", layout="centered")
 
-# 2) Custom CSS for Styling (force top border, remove top rounding, pull container up)
+# 2) Custom CSS for Styling
 st.markdown("""
     <style>
     body {
@@ -82,7 +82,6 @@ model = joblib.load('credit_rating_model.pkl')
 rating_encoder = joblib.load('rating_encoder.pkl')
 issuer_encoder = joblib.load('issuer_encoder.pkl')
 industry_encoder = joblib.load('industry_encoder.pkl')
-default_flag_encoder = joblib.load('default_flag_encoder.pkl')  # Assuming you have this encoder for DefaultFlag
 
 # 5) CSV setup
 historical_data_path = 'Simulated_CreditRating_Data.csv'  # Use local path
@@ -100,7 +99,7 @@ col1, col2 = st.columns([1, 2])
 with col1:
     issuer_name = st.text_input("🏢 Issuer Name")
     industry = st.selectbox("🏭 Industry", sorted(industry_encoder.classes_))
-    default_flag = st.selectbox("⚠️ Default Flag", ["No", "Yes"])  # Adding DefaultFlag
+    default_flag = st.selectbox("⚠️ Default Flag", [0, 1], help="Set to 1 if issuer has defaulted, else 0")
 with col2:
     debt_to_equity = st.number_input("📉 Debt to Equity Ratio", step=0.01)
     ebitda_margin = st.number_input("💰 EBITDA Margin (%)", step=0.01)
@@ -120,12 +119,9 @@ if st.button("🔍 Predict Credit Rating"):
         # Encode industry correctly
         industry_idx = industry_encoder.transform([industry])[0]
 
-        # Encode default flag
-        default_flag_idx = default_flag_encoder.transform([default_flag])[0]
-
-        # Prepare input features for prediction (including DefaultFlag)
+        # Prepare input features for prediction, including DefaultFlag
         X_new = np.array([[debt_to_equity, ebitda_margin, interest_coverage, issue_size,
-                           issuer_idx, industry_idx, default_flag_idx]]).reshape(1, -1)
+                           issuer_idx, industry_idx, default_flag]]).reshape(1, -1)
 
         # Check if features match the model's expectations
         if X_new.shape[1] != model.n_features_in_:
