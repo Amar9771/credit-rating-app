@@ -68,8 +68,9 @@ st.markdown("""
 </div>
 """, unsafe_allow_html=True)
 
-# 4) Load model and encoders with debug (without printing file list)
+# 4) Load model and encoders with debug
 try:
+    st.write("🔄 Model & encoder files detected?", [f for f in os.listdir() if f.endswith('.pkl')])
     model            = joblib.load('credit_rating_model.pkl')
     rating_encoder   = joblib.load('rating_encoder.pkl')
     issuer_encoder   = joblib.load('issuer_encoder.pkl')
