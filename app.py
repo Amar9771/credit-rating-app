@@ -94,17 +94,34 @@ columns = [
 if not os.path.exists(historical_data_path):
     pd.DataFrame(columns=columns).to_csv(historical_data_path, index=False)
 
-# 6) Input form
+# 6) Input form with session_state
 col1, col2 = st.columns([1, 2])
+
+# Check if session_state values exist, otherwise set default
+if 'issuer_name' not in st.session_state:
+    st.session_state.issuer_name = ""
+if 'industry' not in st.session_state:
+    st.session_state.industry = industry_encoder.classes_[0]
+if 'default_flag' not in st.session_state:
+    st.session_state.default_flag = 0
+if 'debt_to_equity' not in st.session_state:
+    st.session_state.debt_to_equity = 0.0
+if 'ebitda_margin' not in st.session_state:
+    st.session_state.ebitda_margin = 0.0
+if 'interest_coverage' not in st.session_state:
+    st.session_state.interest_coverage = 0.0
+if 'issue_size' not in st.session_state:
+    st.session_state.issue_size = 0.0
+
 with col1:
-    issuer_name = st.text_input("🏢 Issuer Name")
-    industry = st.selectbox("🏭 Industry", sorted(industry_encoder.classes_))
-    default_flag = st.selectbox("⚠️ Default Flag", [0, 1], help="Set to 1 if issuer has defaulted, else 0")
+    issuer_name = st.text_input("🏢 Issuer Name", value=st.session_state.issuer_name)
+    industry = st.selectbox("🏭 Industry", sorted(industry_encoder.classes_), index=sorted(industry_encoder.classes_).index(st.session_state.industry))
+    default_flag = st.selectbox("⚠️ Default Flag", [0, 1], help="Set to 1 if issuer has defaulted, else 0", index=[0, 1].index(st.session_state.default_flag))
 with col2:
-    debt_to_equity = st.number_input("📉 Debt to Equity Ratio", step=0.01)
-    ebitda_margin = st.number_input("💰 EBITDA Margin (%)", step=0.01)
-    interest_coverage = st.number_input("🧾 Interest Coverage Ratio", step=0.01)
-    issue_size = st.number_input("📦 Issue Size (₹ Crores)", step=1.0)
+    debt_to_equity = st.number_input("📉 Debt to Equity Ratio", step=0.01, value=st.session_state.debt_to_equity)
+    ebitda_margin = st.number_input("💰 EBITDA Margin (%)", step=0.01, value=st.session_state.ebitda_margin)
+    interest_coverage = st.number_input("🧾 Interest Coverage Ratio", step=0.01, value=st.session_state.interest_coverage)
+    issue_size = st.number_input("📦 Issue Size (₹ Crores)", step=1.0, value=st.session_state.issue_size)
 
 # 7) Predict Button Logic
 st.markdown('<div style="text-align: center; margin-top: 2rem;">', unsafe_allow_html=True)
@@ -144,6 +161,15 @@ if st.button("🔍 Predict Credit Rating"):
             'Predicted Rating': [rating]
         })
         new_row.to_csv(historical_data_path, mode='a', header=False, index=False)
+
+        # Clear fields in session state for new input
+        st.session_state.issuer_name = ""
+        st.session_state.industry = industry_encoder.classes_[0]
+        st.session_state.default_flag = 0
+        st.session_state.debt_to_equity = 0.0
+        st.session_state.ebitda_margin = 0.0
+        st.session_state.interest_coverage = 0.0
+        st.session_state.issue_size = 0.0
 
     except Exception as e:
         st.error(f"❌ Prediction error: {e}")
