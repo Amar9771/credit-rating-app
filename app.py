@@ -68,9 +68,8 @@ st.markdown("""
 </div>
 """, unsafe_allow_html=True)
 
-# 4) Load model and encoders with debug
+# 4) Load model and encoders with debug (without printing file list)
 try:
-    st.write("🔄 Model & encoder files detected?", [f for f in os.listdir() if f.endswith('.pkl')])
     model            = joblib.load('credit_rating_model.pkl')
     rating_encoder   = joblib.load('rating_encoder.pkl')
     issuer_encoder   = joblib.load('issuer_encoder.pkl')
@@ -121,59 +120,52 @@ default_flag_num = 1 if st.session_state['default_flag'] == "Yes" else 0
 # 7) Prediction logic
 if st.button("🔍 Predict Credit Rating"):
     try:
-        # Ensure all features are filled out
-        if not (issuer_name and debt_to_equity > 0 and ebitda_margin > 0 and interest_coverage > 0 and issue_size > 0):
-            st.error("❌ Please fill out all fields correctly!")
+        # Encode issuer (unknown issuers mapped to -1)
+        issuer_val = st.session_state['issuer_name']
+        if issuer_val in issuer_encoder.classes_:
+            issuer_idx = issuer_encoder.transform([issuer_val])[0]
         else:
-            # Encode issuer (unknown issuers mapped to -1)
-            issuer_val = st.session_state['issuer_name']
-            if issuer_val in issuer_encoder.classes_:
-                issuer_idx = issuer_encoder.transform([issuer_val])[0]
-            else:
-                issuer_idx = -1
+            issuer_idx = -1
 
-            industry_idx = industry_encoder.transform([st.session_state['industry']])[0]
+        industry_idx = industry_encoder.transform([st.session_state['industry']])[0]
 
-            # Prepare feature vector (make sure to include all features)
-            X_new = np.array([[
-                issuer_idx,
-                industry_idx,
-                st.session_state['debt_to_equity'],
-                st.session_state['ebitda_margin'],
-                st.session_state['interest_coverage'],
-                st.session_state['issue_size'],
-                default_flag_num
-            ]])
+        # Prepare feature vector
+        X_new = np.array([[
+            issuer_idx,
+            industry_idx,
+            st.session_state['debt_to_equity'],
+            st.session_state['ebitda_margin'],
+            st.session_state['interest_coverage'],
+            st.session_state['issue_size'],
+            default_flag_num
+        ]])
 
-            # Debugging: check the input features
-            st.write("🔍 Feature Vector for Prediction:", X_new)
+        # Predict
+        y_pred = model.predict(X_new)
+        rating = rating_encoder.inverse_transform(y_pred)[0]
+        st.success(f"🎯 Predicted Credit Rating: **{rating}**")
 
-            # Predict
-            y_pred = model.predict(X_new)
-            rating = rating_encoder.inverse_transform(y_pred)[0]
-            st.success(f"🎯 Predicted Credit Rating: **{rating}**")
+        # Append to CSV
+        new_row = pd.DataFrame([{  
+            'Issuer Name':    issuer_val,
+            'Industry':       st.session_state['industry'],
+            'Debt to Equity': st.session_state['debt_to_equity'],
+            'EBITDA Margin':  st.session_state['ebitda_margin'],
+            'Interest Coverage': st.session_state['interest_coverage'],
+            'Issue Size (₹Cr)': st.session_state['issue_size'],
+            'DefaultFlag':    st.session_state['default_flag'],
+            'Predicted Rating': rating
+        }])
+        new_row.to_csv(hist_csv, mode='a', header=False, index=False)
 
-            # Append to CSV
-            new_row = pd.DataFrame([{  
-                'Issuer Name':    issuer_val,
-                'Industry':       st.session_state['industry'],
-                'Debt to Equity': st.session_state['debt_to_equity'],
-                'EBITDA Margin':  st.session_state['ebitda_margin'],
-                'Interest Coverage': st.session_state['interest_coverage'],
-                'Issue Size (₹Cr)': st.session_state['issue_size'],
-                'DefaultFlag':    st.session_state['default_flag'],
-                'Predicted Rating': rating
-            }])
-            new_row.to_csv(hist_csv, mode='a', header=False, index=False)
-
-            # Clear inputs
-            st.session_state['issuer_name'] = ''
-            st.session_state['industry'] = industry_encoder.classes_[0]
-            st.session_state['default_flag'] = 'No'
-            st.session_state['debt_to_equity'] = 0.0
-            st.session_state['ebitda_margin'] = 0.0
-            st.session_state['interest_coverage'] = 0.0
-            st.session_state['issue_size'] = 0.0
+        # Clear inputs
+        st.session_state['issuer_name'] = ''
+        st.session_state['industry'] = industry_encoder.classes_[0]
+        st.session_state['default_flag'] = 'No'
+        st.session_state['debt_to_equity'] = 0.0
+        st.session_state['ebitda_margin'] = 0.0
+        st.session_state['interest_coverage'] = 0.0
+        st.session_state['issue_size'] = 0.0
 
     except Exception as e:
         st.error(f"❌ Prediction error: {e}")
