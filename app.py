@@ -171,8 +171,8 @@ if st.button("🔍 Predict Credit Rating"):
         st.session_state.interest_coverage = 0.0
         st.session_state.issue_size = 0.0
 
-        # Trigger a rerun to reset the fields immediately
-        st.experimental_rerun()
+        # Clear inputs in the form (trigger an update by re-running the script)
+        st.experimental_rerun()  # This should be removed, use session_state instead
 
     except Exception as e:
         st.error(f"❌ Prediction error: {e}")
