@@ -162,7 +162,7 @@ if st.button("🔍 Predict Credit Rating"):
         })
         new_row.to_csv(historical_data_path, mode='a', header=False, index=False)
 
-        # **Only reset input values (not the predicted rating)**
+        # Reset the input values in session_state
         st.session_state.issuer_name = ""
         st.session_state.industry = industry_encoder.classes_[0]
         st.session_state.default_flag = 0
@@ -170,6 +170,9 @@ if st.button("🔍 Predict Credit Rating"):
         st.session_state.ebitda_margin = 0.0
         st.session_state.interest_coverage = 0.0
         st.session_state.issue_size = 0.0
+
+        # Clear the input fields visually
+        st.experimental_rerun()  # This will clear the inputs after submission
 
     except Exception as e:
         st.error(f"❌ Prediction error: {e}")
