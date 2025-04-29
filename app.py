@@ -1,5 +1,4 @@
 import os
-import traceback
 import streamlit as st
 import joblib
 import numpy as np
@@ -7,9 +6,6 @@ import pandas as pd
 
 # 1) Must be first
 st.set_page_config(page_title="Credit Rating Predictor", layout="centered")
-
-# 1a) Show working dir for debugging
-st.write("🗂️ Current working directory:", os.getcwd())
 
 # 2) CSS (same as before)
 st.markdown("""
@@ -79,28 +75,29 @@ with col2:
 # 7) Prediction
 if st.button("🔍 Predict Credit Rating"):
     try:
-        # encode issuer
+        # Encode issuer and industry
         if issuer_name in issuer_encoder.classes_:
             issuer_idx = issuer_encoder.transform([issuer_name])[0]
         else:
-            # optional: grow the encoder (but model may not know new issuers)
             issuer_encoder.classes_ = np.append(issuer_encoder.classes_, issuer_name)
             issuer_idx = issuer_encoder.transform([issuer_name])[0]
 
         industry_idx = industry_encoder.transform([industry])[0]
 
-        X_new = np.array([[issuer_idx,
-                           industry_idx,
-                           debt_to_equity,
-                           ebitda_margin,
-                           interest_coverage,
-                           issue_size]]).reshape(1, -1)
+        # Add the missing 7th feature (assuming the 7th feature is the 'Year' or a placeholder, replace accordingly)
+        year = 2025  # Assuming a placeholder, replace with actual value if needed
 
+        # Create input for prediction
+        X_new = np.array([[debt_to_equity, ebitda_margin,
+                           interest_coverage, issue_size,
+                           issuer_idx, industry_idx, year]]).reshape(1, -1)
+
+        # Make prediction
         y_pred = model.predict(X_new)
         rating = rating_encoder.inverse_transform(y_pred)[0]
         st.success(f"🎯 Predicted Credit Rating: **{rating}**")
 
-        # append to CSV
+        # Append to CSV
         new_row = pd.DataFrame([{
             'Issuer Name': issuer_name,
             'Industry': industry,
