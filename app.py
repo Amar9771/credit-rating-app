@@ -3,6 +3,9 @@ import joblib
 import numpy as np
 import pandas as pd
 
+# Set the page configuration as the first command
+st.set_page_config(page_title="Credit Rating Predictor", layout="centered")
+
 # Load model and encoders
 model = joblib.load('credit_rating_model.pkl')
 rating_encoder = joblib.load('rating_encoder.pkl')
@@ -21,7 +24,6 @@ except FileNotFoundError:
     st.warning("⚠️ Historical data file not found. Predictions will be based on new inputs only.")
 
 # Streamlit UI
-st.set_page_config(page_title="Credit Rating Predictor", layout="centered")
 st.title("🏦 Credit Rating Predictor")
 
 # Inputs
