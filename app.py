@@ -4,136 +4,182 @@ import joblib
 import numpy as np
 import pandas as pd
 
-# 1) Page config
+# 1) Streamlit page configuration (must be first)
 st.set_page_config(page_title="Credit Rating Predictor", layout="centered")
 
-# 2) Custom CSS (top bar + styling)
+# 1a) Debug: show working directory and files
+st.write("🗂️ Current working directory:", os.getcwd())
+st.write("📁 Files in directory:", os.listdir())
+
+# 2) Custom CSS for a professional, official look
 st.markdown("""
-    <style>
-    .top-bar {
-        position: fixed; top: 0; left: 0;
-        width: 100%; height: 6px;
-        background-color: #4CAF50; z-index: 1000;
-    }
-    body {
-        background: linear-gradient(to right, #e0f2f1, #ffffff);
-        padding-top: 0;
-    }
-    .block-container {
-        max-width: 700px;
-        margin: 20px auto 1rem !important;
-        border: 2px solid #4CAF50 !important;
-        border-radius: 0 0 15px 15px !important;
-        background-color: white;
-        padding: 2rem !important;
-        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
-    }
-    .block-container h1 {
-        text-align: center; color: #4CAF50; margin-bottom: 0.5rem;
-    }
-    input, select {
-        max-width: 300px !important;
-    }
-    button[kind="primary"] {
-        border-radius: 12px !important;
-        padding: 10px 20px !important;
-        background-color: #4CAF50; color: white; border: none;
-        font-weight: bold; transition: background-color 0.3s ease;
-    }
-    button[kind="primary"]:hover { background-color: #45a049; }
-    .footer { text-align: center; margin-top: 2rem; font-size: 0.9rem; color: #777; }
-    .historical-data { margin-top: 4rem; }
-    </style>
-    <div class="top-bar"></div>
+<style>
+body {
+    background-color: #f5f5f5;
+    padding-top: 0;
+}
+.block-container {
+    max-width: 720px;
+    margin: 2rem auto !important;
+    border: 1px solid #333 !important;
+    border-radius: 8px !important;
+    background-color: #fff;
+    padding: 2rem !important;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+.block-container h1 {
+    text-align: center;
+    color: #333;
+    margin-bottom: 0.5rem;
+}
+input[type="text"],
+input[type="number"],
+select {
+    max-width: 300px !important;
+}
+button[kind="primary"] {
+    border-radius: 8px !important;
+    padding: 8px 16px !important;
+    background-color: #0052cc;
+    color: white;
+    border: none;
+    font-weight: bold;
+    transition: background-color 0.3s ease;
+}
+button[kind="primary"]:hover {
+    background-color: #0041a8;
+}
+.footer {
+    text-align: center;
+    margin-top: 2rem;
+    font-size: 0.9rem;
+    color: #555;
+}
+</style>
 """, unsafe_allow_html=True)
 
-# 3) Header
+# 3) Header with Logo and Title
 st.markdown("""
-    <div style="text-align:center; margin-bottom:0;">
-        <img src="https://cdn-icons-png.flaticon.com/512/2331/2331970.png"
-             width="40" style="margin-bottom:0;" />
-        <h1 style="color:#4CAF50; margin-bottom:0;">Credit Rating Predictor</h1>
-        <p style="color:#666; font-size:1rem; margin-top:0;">
-            Predict issuer ratings based on key financial indicators
-        </p>
-    </div>
+<div style="text-align: center;">
+    <img src="https://cdn-icons-png.flaticon.com/512/2331/2331970.png"
+         width="48" style="vertical-align: middle;" />
+    <h1 style="display: inline; margin-left: 0.5rem; color: #333;">Credit Rating Predictor</h1>
+    <p style="color: #666; margin-top: 4px;">Predict issuer ratings based on key financial indicators</p>
+</div>
 """, unsafe_allow_html=True)
 
-# 4) Load model & encoders
-model            = joblib.load('credit_rating_model.pkl')
-rating_encoder   = joblib.load('rating_encoder.pkl')
-issuer_encoder   = joblib.load('issuer_encoder.pkl')
-industry_encoder = joblib.load('industry_encoder.pkl')
+# 4) Load model and encoders with debug
+try:
+    st.write("🔄 Model & encoder files detected?", [f for f in os.listdir() if f.endswith('.pkl')])
+    model            = joblib.load('credit_rating_model.pkl')
+    rating_encoder   = joblib.load('rating_encoder.pkl')
+    issuer_encoder   = joblib.load('issuer_encoder.pkl')
+    industry_encoder = joblib.load('industry_encoder.pkl')
+except Exception as e:
+    st.error(f"❌ Failed to load model or encoders: {e}")
+    st.stop()
 
-# 5) CSV setup (with DefaultFlag + Predicted Rating)
-data_dir = os.path.join(os.getcwd(), 'data')
-os.makedirs(data_dir, exist_ok=True)
-
-historical_data_path = os.path.join(data_dir, 'Simulated_CreditRating_Data.csv')
+# 5) CSV setup for historical data
+hist_csv = 'Simulated_CreditRating_Data.csv'
 columns = [
     'Issuer Name','Industry','Debt to Equity','EBITDA Margin',
     'Interest Coverage','Issue Size (₹Cr)','DefaultFlag','Predicted Rating'
 ]
-if not os.path.exists(historical_data_path):
-    pd.DataFrame(columns=columns).to_csv(historical_data_path, index=False)
+if not os.path.exists(hist_csv):
+    pd.DataFrame(columns=columns).to_csv(hist_csv, index=False)
 
-# 6) Input form (with DefaultFlag)
-col1, col2 = st.columns([1, 2])
+# 6) Input form (including Default Flag) with session state keys
+if 'issuer_name' not in st.session_state:
+    st.session_state['issuer_name'] = ''
+if 'industry' not in st.session_state:
+    st.session_state['industry'] = None
+if 'default_flag' not in st.session_state:
+    st.session_state['default_flag'] = 'No'
+if 'debt_to_equity' not in st.session_state:
+    st.session_state['debt_to_equity'] = 0.0
+if 'ebitda_margin' not in st.session_state:
+    st.session_state['ebitda_margin'] = 0.0
+if 'interest_coverage' not in st.session_state:
+    st.session_state['interest_coverage'] = 0.0
+if 'issue_size' not in st.session_state:
+    st.session_state['issue_size'] = 0.0
+
+col1, col2 = st.columns(2)
 with col1:
-    issuer_name  = st.text_input("🏢 Issuer Name")
-    industry     = st.selectbox("🏭 Industry", sorted(industry_encoder.classes_))
-    default_flag = int(st.checkbox("⚠️ Default Flag?", value=False))
+    issuer_name = st.text_input("🏢 Issuer Name", key='issuer_name')
+    industry    = st.selectbox("🏭 Industry", sorted(industry_encoder.classes_), key='industry')
+    default_flag = st.selectbox("⚠️ Default Flag", ["No", "Yes"], key='default_flag')
 with col2:
-    debt_to_equity    = st.number_input("📉 Debt to Equity Ratio", step=0.01)
-    ebitda_margin     = st.number_input("💰 EBITDA Margin (%)", step=0.01)
-    interest_coverage = st.number_input("🧾 Interest Coverage Ratio", step=0.01)
-    issue_size        = st.number_input("📦 Issue Size (₹ Crores)", step=1.0)
+    debt_to_equity    = st.number_input("📉 Debt to Equity Ratio", step=0.01, key='debt_to_equity')
+    ebitda_margin     = st.number_input("💰 EBITDA Margin (%)", step=0.01, key='ebitda_margin')
+    interest_coverage = st.number_input("🧾 Interest Coverage Ratio", step=0.01, key='interest_coverage')
+    issue_size        = st.number_input("📦 Issue Size (₹ Crores)", step=1.0, key='issue_size')
+
+# Convert Default Flag to numeric
+default_flag_num = 1 if st.session_state['default_flag'] == "Yes" else 0
 
 # 7) Prediction logic
-st.markdown('<div style="text-align:center; margin-top:2rem;">', unsafe_allow_html=True)
 if st.button("🔍 Predict Credit Rating"):
     try:
-        # encode issuer & industry
-        issuer_idx   = issuer_encoder.transform([issuer_name])[0] if issuer_name in issuer_encoder.classes_ else -1
-        industry_idx = industry_encoder.transform([industry])[0]
+        # Encode issuer (unknown issuers mapped to -1)
+        issuer_val = st.session_state['issuer_name']
+        if issuer_val in issuer_encoder.classes_:
+            issuer_idx = issuer_encoder.transform([issuer_val])[0]
+        else:
+            issuer_idx = -1
 
-        # assemble 7 features
-        X_new = np.array([[debt_to_equity, ebitda_margin,
-                           interest_coverage, issue_size,
-                           issuer_idx, industry_idx,
-                           default_flag]])
+        industry_idx = industry_encoder.transform([st.session_state['industry']])[0]
+
+        # Prepare feature vector
+        X_new = np.array([[
+            issuer_idx,
+            industry_idx,
+            st.session_state['debt_to_equity'],
+            st.session_state['ebitda_margin'],
+            st.session_state['interest_coverage'],
+            st.session_state['issue_size'],
+            default_flag_num
+        ]])
+
+        # Predict
         y_pred = model.predict(X_new)
         rating = rating_encoder.inverse_transform(y_pred)[0]
         st.success(f"🎯 Predicted Credit Rating: **{rating}**")
 
-        # append to CSV under "Predicted Rating"
-        new_row = pd.DataFrame([{
-            'Issuer Name':       issuer_name,
-            'Industry':          industry,
-            'Debt to Equity':    debt_to_equity,
-            'EBITDA Margin':     ebitda_margin,
-            'Interest Coverage': interest_coverage,
-            'Issue Size (₹Cr)':  issue_size,
-            'DefaultFlag':       default_flag,
-            'Predicted Rating':  rating
+        # Append to CSV
+        new_row = pd.DataFrame([{  
+            'Issuer Name':    issuer_val,
+            'Industry':       st.session_state['industry'],
+            'Debt to Equity': st.session_state['debt_to_equity'],
+            'EBITDA Margin':  st.session_state['ebitda_margin'],
+            'Interest Coverage': st.session_state['interest_coverage'],
+            'Issue Size (₹Cr)': st.session_state['issue_size'],
+            'DefaultFlag':    st.session_state['default_flag'],
+            'Predicted Rating': rating
         }])
-        new_row.to_csv(historical_data_path, mode='a', header=False, index=False)
+        new_row.to_csv(hist_csv, mode='a', header=False, index=False)
+
+        # Clear inputs
+        st.session_state['issuer_name'] = ''
+        st.session_state['industry'] = industry_encoder.classes_[0]
+        st.session_state['default_flag'] = 'No'
+        st.session_state['debt_to_equity'] = 0.0
+        st.session_state['ebitda_margin'] = 0.0
+        st.session_state['interest_coverage'] = 0.0
+        st.session_state['issue_size'] = 0.0
 
     except Exception as e:
         st.error(f"❌ Prediction error: {e}")
-st.markdown('</div>', unsafe_allow_html=True)
 
-# 8) Show history
-st.markdown('<div class="historical-data">', unsafe_allow_html=True)
+# 8) Historical data expander
 with st.expander("📜 Show Historical Data"):
-    hist_df = pd.read_csv(historical_data_path)
+    hist_df = pd.read_csv(hist_csv)
     st.dataframe(hist_df)
-st.markdown('</div>', unsafe_allow_html=True)
 
 # 9) Footer
 st.markdown("""
 <div class="footer">
-    <hr style="margin-top:2rem; margin-bottom:1rem;" />
+    <hr style="margin-top: 2rem;" />
     <p>🔒 Secure & Private | 🏦 Powered by ML | 💡 Created by Your Name</p>
 </div>
 """, unsafe_allow_html=True)
