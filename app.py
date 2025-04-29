@@ -83,40 +83,55 @@ columns = [
 if not os.path.exists(hist_csv):
     pd.DataFrame(columns=columns).to_csv(hist_csv, index=False)
 
-# 6) Input form (including Default Flag)
+# 6) Input form (including Default Flag) with session state keys
+if 'issuer_name' not in st.session_state:
+    st.session_state['issuer_name'] = ''
+if 'industry' not in st.session_state:
+    st.session_state['industry'] = industry_encoder.classes_[0]
+if 'default_flag' not in st.session_state:
+    st.session_state['default_flag'] = 'No'
+if 'debt_to_equity' not in st.session_state:
+    st.session_state['debt_to_equity'] = 0.0
+if 'ebitda_margin' not in st.session_state:
+    st.session_state['ebitda_margin'] = 0.0
+if 'interest_coverage' not in st.session_state:
+    st.session_state['interest_coverage'] = 0.0
+if 'issue_size' not in st.session_state:
+    st.session_state['issue_size'] = 0.0
+
 col1, col2 = st.columns(2)
 with col1:
-    issuer_name = st.text_input("🏢 Issuer Name")
-    industry    = st.selectbox("🏭 Industry", sorted(industry_encoder.classes_))
-    default_flag = st.selectbox("⚠️ Default Flag", ["No", "Yes"])
+    issuer_name = st.text_input("🏢 Issuer Name", key='issuer_name')
+    industry    = st.selectbox("🏭 Industry", sorted(industry_encoder.classes_), key='industry')
+    default_flag = st.selectbox("⚠️ Default Flag", ["No", "Yes"], key='default_flag')
 with col2:
-    debt_to_equity    = st.number_input("📉 Debt to Equity Ratio", step=0.01)
-    ebitda_margin     = st.number_input("💰 EBITDA Margin (%)", step=0.01)
-    interest_coverage = st.number_input("🧾 Interest Coverage Ratio", step=0.01)
-    issue_size        = st.number_input("📦 Issue Size (₹ Crores)", step=1.0)
+    debt_to_equity    = st.number_input("📉 Debt to Equity Ratio", step=0.01, key='debt_to_equity')
+    ebitda_margin     = st.number_input("💰 EBITDA Margin (%)", step=0.01, key='ebitda_margin')
+    interest_coverage = st.number_input("🧾 Interest Coverage Ratio", step=0.01, key='interest_coverage')
+    issue_size        = st.number_input("📦 Issue Size (₹ Crores)", step=1.0, key='issue_size')
 
 # Convert Default Flag to numeric
-default_flag_num = 1 if default_flag == "Yes" else 0
+default_flag_num = 1 if st.session_state['default_flag'] == "Yes" else 0
 
 # 7) Prediction logic
 if st.button("🔍 Predict Credit Rating"):
     try:
         # Encode issuer (unknown issuers mapped to -1)
-        if issuer_name in issuer_encoder.classes_:
-            issuer_idx = issuer_encoder.transform([issuer_name])[0]
+        if st.session_state['issuer_name'] in issuer_encoder.classes_:
+            issuer_idx = issuer_encoder.transform([st.session_state['issuer_name']])[0]
         else:
             issuer_idx = -1
 
-        industry_idx = industry_encoder.transform([industry])[0]
+        industry_idx = industry_encoder.transform([st.session_state['industry']])[0]
 
         # Prepare feature vector in same order as training
         X_new = np.array([[
             issuer_idx,
             industry_idx,
-            debt_to_equity,
-            ebitda_margin,
-            interest_coverage,
-            issue_size,
+            st.session_state['debt_to_equity'],
+            st.session_state['ebitda_margin'],
+            st.session_state['interest_coverage'],
+            st.session_state['issue_size'],
             default_flag_num
         ]])
 
@@ -133,16 +148,25 @@ if st.button("🔍 Predict Credit Rating"):
 
         # Append to CSV
         new_row = pd.DataFrame([{  
-            'Issuer Name':    issuer_name,
-            'Industry':       industry,
-            'Debt to Equity': debt_to_equity,
-            'EBITDA Margin':  ebitda_margin,
-            'Interest Coverage': interest_coverage,
-            'Issue Size (₹Cr)': issue_size,
-            'DefaultFlag':    default_flag,
+            'Issuer Name':    st.session_state['issuer_name'],
+            'Industry':       st.session_state['industry'],
+            'Debt to Equity': st.session_state['debt_to_equity'],
+            'EBITDA Margin':  st.session_state['ebitda_margin'],
+            'Interest Coverage': st.session_state['interest_coverage'],
+            'Issue Size (₹Cr)': st.session_state['issue_size'],
+            'DefaultFlag':    st.session_state['default_flag'],
             'Predicted Rating': rating
         }])
         new_row.to_csv(hist_csv, mode='a', header=False, index=False)
+
+        # Clear inputs
+        st.session_state['issuer_name'] = ''
+        st.session_state['industry'] = industry_encoder.classes_[0]
+        st.session_state['default_flag'] = 'No'
+        st.session_state['debt_to_equity'] = 0.0
+        st.session_state['ebitda_margin'] = 0.0
+        st.session_state['interest_coverage'] = 0.0
+        st.session_state['issue_size'] = 0.0
 
     except Exception as e:
         st.error(f"❌ Prediction error: {e}")
