@@ -124,6 +124,7 @@ if st.button("🔍 Predict Credit Rating"):
         # Ensure all features are filled out
         if not (issuer_name and debt_to_equity > 0 and ebitda_margin > 0 and interest_coverage > 0 and issue_size > 0):
             st.error("❌ Please fill out all fields correctly!")
+            # Handle the error case by showing an error message but not stopping the flow
             return
 
         # Encode issuer (unknown issuers mapped to -1)
