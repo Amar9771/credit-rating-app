@@ -70,8 +70,8 @@ try:
     rating_encoder   = joblib.load('rating_encoder.pkl')
     issuer_encoder   = joblib.load('issuer_encoder.pkl')
     industry_encoder = joblib.load('industry_encoder.pkl')
-except Exception:
-    st.error("❌ Failed to load model or encoders.")
+except Exception as e:
+    st.error(f"❌ Failed to load model or encoders: {e}")
     st.stop()
 
 # 5) CSV setup for historical data
