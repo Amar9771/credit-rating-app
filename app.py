@@ -1,12 +1,24 @@
 import streamlit as st
 import joblib
 import numpy as np
+import pandas as pd
 
 # Load model and encoders
 model = joblib.load('credit_rating_model.pkl')
 rating_encoder = joblib.load('rating_encoder.pkl')
 issuer_encoder = joblib.load('issuer_encoder.pkl')
 industry_encoder = joblib.load('industry_encoder.pkl')
+
+# Load historical credit rating data
+historical_data_path = r'F:\credit_rating_app\Simulated_CreditRating_Data.csv'
+
+# Check if the file exists and load the data
+try:
+    historical_data = pd.read_csv(historical_data_path)
+    st.write("📜 Historical Data Loaded:")
+    st.write(historical_data.head())  # Show a preview of the historical data
+except FileNotFoundError:
+    st.warning("⚠️ Historical data file not found. Predictions will be based on new inputs only.")
 
 # Streamlit UI
 st.set_page_config(page_title="Credit Rating Predictor", layout="centered")
@@ -40,6 +52,21 @@ if st.button("Predict Credit Rating"):
 
         # Show result
         st.success(f"🎯 Predicted Credit Rating: **{predicted_rating}**")
+
+        # Append the new prediction to historical data
+        new_data = {
+            'Issuer Name': [issuer_name],
+            'Industry': [industry],
+            'Debt to Equity': [debt_to_equity],
+            'EBITDA Margin': [ebitda_margin],
+            'Interest Coverage': [interest_coverage],
+            'Issue Size (₹ Crores)': [issue_size],
+            'Predicted Rating': [predicted_rating]
+        }
+        new_data_df = pd.DataFrame(new_data)
+
+        # Append the new data to the historical data CSV
+        new_data_df.to_csv(historical_data_path, mode='a', header=False, index=False)
 
     except Exception as e:
         st.error(f"❌ Error: {e}")
