@@ -7,7 +7,7 @@ import pandas as pd
 # 1) Page config
 st.set_page_config(page_title="Credit Rating Predictor", layout="centered")
 
-# 2) Custom CSS (including hover-only subtitle)
+# 2) Custom CSS (including hover-only subtitle and hiding Issuer Name input)
 st.markdown("""
     <style>
     body {
@@ -64,6 +64,10 @@ st.markdown("""
     .historical-data {
         margin-top: 4rem;
     }
+    /* Hide Issuer Name input */
+    .issuer-name {
+        display: none;
+    }
     </style>
 """, unsafe_allow_html=True)
 
@@ -114,25 +118,26 @@ industry_list = ["Select Industry"]   + sorted(industry_encoder.classes_)
 
 col1, col2 = st.columns([1, 2])
 with col1:
-    issuer_name      = st.selectbox("🏢 Issuer Name", issuer_list,
-                                    index=issuer_list.index(st.session_state['issuer_name']),
-                                    key="issuer_name")
-    industry         = st.selectbox("🏭 Industry", industry_list,
-                                    index=industry_list.index(st.session_state['industry']),
-                                    key="industry")
+    # Issuer Name input is hidden, but still functional
+    issuer_name = st.selectbox("🏢 Issuer Name", issuer_list,
+                               index=issuer_list.index(st.session_state['issuer_name']),
+                               key="issuer_name", help="Select Issuer Name", className="issuer-name")
+    industry = st.selectbox("🏭 Industry", industry_list,
+                            index=industry_list.index(st.session_state['industry']),
+                            key="industry")
 with col2:
-    debt_to_equity   = st.number_input("📉 Debt to Equity Ratio",
-                                       step=0.01,
-                                       key="debt_to_equity")
-    ebitda_margin    = st.number_input("💰 EBITDA Margin (%)",
-                                       step=0.01,
-                                       key="ebitda_margin")
-    interest_coverage= st.number_input("🧾 Interest Coverage Ratio",
-                                       step=0.01,
-                                       key="interest_coverage")
-    issue_size       = st.number_input("📦 Issue Size (₹ Crores)",
-                                       step=1.0,
-                                       key="issue_size")
+    debt_to_equity = st.number_input("📉 Debt to Equity Ratio",
+                                     step=0.01,
+                                     key="debt_to_equity")
+    ebitda_margin = st.number_input("💰 EBITDA Margin (%)",
+                                    step=0.01,
+                                    key="ebitda_margin")
+    interest_coverage = st.number_input("🧾 Interest Coverage Ratio",
+                                        step=0.01,
+                                        key="interest_coverage")
+    issue_size = st.number_input("📦 Issue Size (₹ Crores)",
+                                 step=1.0,
+                                 key="issue_size")
 
 default_flag = 0  # hidden from UI
 
@@ -143,11 +148,11 @@ btn_col1, btn_col2 = st.columns([1,1])
 with btn_col1:
     if st.button("🔍 Predict Credit Rating"):
         try:
-            if issuer_name=="Select Issuer Name" or industry=="Select Industry":
+            if issuer_name == "Select Issuer Name" or industry == "Select Industry":
                 st.warning("⚠️ Please select both Issuer Name and Industry before predicting.")
             else:
                 # prepare features
-                issuer_idx   = issuer_encoder.transform([issuer_name])[0]
+                issuer_idx = issuer_encoder.transform([issuer_name])[0]
                 industry_idx = industry_encoder.transform([industry])[0]
                 X_new = np.array([[debt_to_equity,
                                    ebitda_margin,
