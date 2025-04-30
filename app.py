@@ -8,7 +8,8 @@ import pandas as pd
 st.set_page_config(page_title="Credit Rating Predictor", layout="centered")
 
 # 2) Custom CSS
-st.markdown("""<style>
+st.markdown("""
+    <style>
     body {
         background: linear-gradient(to right, #e0f2f1, #ffffff);
         padding-top: 0;
@@ -20,7 +21,7 @@ st.markdown("""<style>
         border-top-left-radius: 0 !important;
         border-top-right-radius: 0 !important;
         border-bottom-left-radius: 15px !important;
-        border-bottom-right-radius: 15px !important;
+        border-bottom-right-radius: 15px ! important;
         background-color: white;
         padding: 2rem !important;
         box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
@@ -59,10 +60,12 @@ st.markdown("""<style>
     .historical-data {
         margin-top: 4rem;
     }
-    </style>""", unsafe_allow_html=True)
+    </style>
+""", unsafe_allow_html=True)
 
 # 3) Header
-st.markdown("""<div style="text-align: center; margin-bottom: 0rem;">
+st.markdown("""
+    <div style="text-align: center; margin-bottom: 0rem;">
         <img src="https://cdn-icons-png.flaticon.com/512/2331/2331970.png"
              width="40" style="margin-bottom: 0px;" />
         <h1 style="color: #4CAF50; margin-bottom: 0.0rem;">
@@ -71,7 +74,8 @@ st.markdown("""<div style="text-align: center; margin-bottom: 0rem;">
         <p style="color: #666; font-size: 1.0rem; margin-top: 0;">
             Predict issuer ratings based on key financial indicators
         </p>
-    </div>""", unsafe_allow_html=True)
+    </div>
+""", unsafe_allow_html=True)
 
 # 4) Load models & encoders
 model = joblib.load('credit_rating_model.pkl')
@@ -89,78 +93,95 @@ columns = [
 if not os.path.exists(historical_data_path):
     pd.DataFrame(columns=columns).to_csv(historical_data_path, index=False)
 
-# 6) Prepare dropdown lists
+# 6) Form Inputs (reset session state before inputs)
+if 'issuer_name' not in st.session_state:
+    st.session_state['issuer_name'] = "Select Issuer Name"
+if 'industry' not in st.session_state:
+    st.session_state['industry'] = "Select Industry"
+if 'debt_to_equity' not in st.session_state:
+    st.session_state['debt_to_equity'] = 0.0
+if 'ebitda_margin' not in st.session_state:
+    st.session_state['ebitda_margin'] = 0.0
+if 'interest_coverage' not in st.session_state:
+    st.session_state['interest_coverage'] = 0.0
+if 'issue_size' not in st.session_state:
+    st.session_state['issue_size'] = 0.0
+
+# Prepare dropdown lists
 issuer_list = ["Select Issuer Name"] + list(issuer_encoder.classes_)
 industry_list = ["Select Industry"] + sorted(industry_encoder.classes_)
 
-# 7) Form Layout
+# Form Layout
 col1, col2 = st.columns([1, 2])
 
 with col1:
-    # Issuer Name and Industry selection
-    issuer_name = st.selectbox("🏢 Issuer Name", issuer_list, index=0 if 'issuer_name' not in st.session_state else issuer_list.index(st.session_state['issuer_name']), key="issuer_name")
-    industry = st.selectbox("🏭 Industry", industry_list, index=0 if 'industry' not in st.session_state else industry_list.index(st.session_state['industry']), key="industry")
+    issuer_name = st.selectbox("🏢 Issuer Name", issuer_list, index=issuer_list.index(st.session_state['issuer_name']), key="issuer_name")
+    industry = st.selectbox("🏭 Industry", industry_list, index=industry_list.index(st.session_state['industry']), key="industry")
 
 with col2:
-    # Financial inputs
-    debt_to_equity = st.number_input("📉 Debt to Equity Ratio", step=0.01, value=st.session_state.get('debt_to_equity', 0.0), key="debt_to_equity")
-    ebitda_margin = st.number_input("💰 EBITDA Margin (%)", step=0.01, value=st.session_state.get('ebitda_margin', 0.0), key="ebitda_margin")
-    interest_coverage = st.number_input("🧾 Interest Coverage Ratio", step=0.01, value=st.session_state.get('interest_coverage', 0.0), key="interest_coverage")
-    issue_size = st.number_input("📦 Issue Size (₹ Crores)", step=1.0, value=st.session_state.get('issue_size', 0.0), key="issue_size")
+    debt_to_equity = st.number_input("📉 Debt to Equity Ratio", step=0.01, key="debt_to_equity")
+    ebitda_margin = st.number_input("💰 EBITDA Margin (%)", step=0.01, key="ebitda_margin")
+    interest_coverage = st.number_input("🧾 Interest Coverage Ratio", step=0.01, key="interest_coverage")
+    issue_size = st.number_input("📦 Issue Size (₹ Crores)", step=1.0, key="issue_size")
 
 # Internally set default flag (hidden from UI)
 default_flag = 0
 
-# 8) Reset Form Button (Reload the page)
-if st.button("🔄 Reset Form"):
-    # Refresh the page by reloading it
-    st.markdown(f"<meta http-equiv='refresh' content='0; url=/' />", unsafe_allow_html=True)
-
-# 9) Prediction Logic
+# 7) Prediction Logic
 st.markdown('<div style="text-align: center; margin-top: 2rem;">', unsafe_allow_html=True)
-if st.button("🔍 Predict Credit Rating"):
-    try:
-        if issuer_name == "Select Issuer Name" or industry == "Select Industry":
-            st.warning("⚠️ Please select both Issuer Name and Industry before predicting.")
-        else:
-            issuer_idx = issuer_encoder.transform([issuer_name])[0]
-            industry_idx = industry_encoder.transform([industry])[0]
+col3, col4 = st.columns([1, 1])  # Create columns for buttons
 
-            X_new = np.array([[debt_to_equity, ebitda_margin, interest_coverage,
-                               issue_size, issuer_idx, industry_idx, default_flag]]).reshape(1, -1)
+with col3:
+    if st.button("🔍 Predict Credit Rating"):
+        try:
+            if issuer_name == "Select Issuer Name" or industry == "Select Industry":
+                st.warning("⚠️ Please select both Issuer Name and Industry before predicting.")
+            else:
+                issuer_idx = issuer_encoder.transform([issuer_name])[0]
+                industry_idx = industry_encoder.transform([industry])[0]
 
-            if X_new.shape[1] != model.n_features_in_:
-                raise ValueError(f"Input features mismatch: Expected {model.n_features_in_} features, got {X_new.shape[1]}")
+                X_new = np.array([[debt_to_equity, ebitda_margin, interest_coverage,
+                                   issue_size, issuer_idx, industry_idx, default_flag]]).reshape(1, -1)
 
-            y_pred = model.predict(X_new)
-            rating = rating_encoder.inverse_transform(y_pred)[0]
-            st.success(f"🎯 Predicted Credit Rating: **{rating}**")
+                if X_new.shape[1] != model.n_features_in_:
+                    raise ValueError(f"Input features mismatch: Expected {model.n_features_in_} features, got {X_new.shape[1]}")
 
-            new_row = pd.DataFrame({
-                'Issuer Name': [issuer_name],
-                'Industry': [industry],
-                'Debt to Equity': [debt_to_equity],
-                'EBITDA Margin': [ebitda_margin],
-                'Interest Coverage': [interest_coverage],
-                'Issue Size (₹Cr)': [issue_size],
-                'DefaultFlag': [default_flag],
-                'Predicted Rating': [rating]
-            })
-            new_row.to_csv(historical_data_path, mode='a', header=False, index=False)
+                y_pred = model.predict(X_new)
+                rating = rating_encoder.inverse_transform(y_pred)[0]
+                st.success(f"🎯 Predicted Credit Rating: **{rating}**")
 
-    except Exception as e:
-        st.error(f"❌ Prediction error: {e}")
-st.markdown('</div>', unsafe_allow_html=True)
+                new_row = pd.DataFrame({
+                    'Issuer Name': [issuer_name],
+                    'Industry': [industry],
+                    'Debt to Equity': [debt_to_equity],
+                    'EBITDA Margin': [ebitda_margin],
+                    'Interest Coverage': [interest_coverage],
+                    'Issue Size (₹Cr)': [issue_size],
+                    'DefaultFlag': [default_flag],
+                    'Predicted Rating': [rating]
+                })
+                new_row.to_csv(historical_data_path, mode='a', header=False, index=False)
 
-# 10) Historical data
+        except Exception as e:
+            st.error(f"❌ Prediction error: {e}")
+    st.markdown('</div>', unsafe_allow_html=True)
+
+# Clear Inputs - Refresh page
+with col4:
+    if st.button("🧹 Clear Inputs"):
+        st.markdown(f"<meta http-equiv='refresh' content='0; url=/' />", unsafe_allow_html=True)
+
+# 8) Historical data
 st.markdown('<div class="historical-data">', unsafe_allow_html=True)
 with st.expander("📜 Show Historical Data"):
     hist_df = pd.read_csv(historical_data_path)
     st.dataframe(hist_df)
 st.markdown('</div>', unsafe_allow_html=True)
 
-# 11) Footer
-st.markdown("""<div class="footer">
+# 9) Footer
+st.markdown("""
+<div class="footer">
     <hr style="margin-top: 2rem; margin-bottom: 1rem;" />
     <p>🔒 Secure & Private | 🏦 Powered by ML | 💡 Created by Your Name</p>
-</div>""", unsafe_allow_html=True)
+</div>
+""", unsafe_allow_html=True)
