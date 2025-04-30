@@ -89,21 +89,11 @@ columns = [
 if not os.path.exists(historical_data_path):
     pd.DataFrame(columns=columns).to_csv(historical_data_path, index=False)
 
-# 6) Initialize session state variables
-if 'issuer_name' not in st.session_state:
-    st.session_state['issuer_name'] = "Select Issuer Name"
-if 'industry' not in st.session_state:
-    st.session_state['industry'] = "Select Industry"
-if 'debt_to_equity' not in st.session_state:
-    st.session_state['debt_to_equity'] = 0.0
-if 'ebitda_margin' not in st.session_state:
-    st.session_state['ebitda_margin'] = 0.0
-if 'interest_coverage' not in st.session_state:
-    st.session_state['interest_coverage'] = 0.0
-if 'issue_size' not in st.session_state:
-    st.session_state['issue_size'] = 0.0
+# 6) Session state initialization
+if 'reset' not in st.session_state:
+    st.session_state['reset'] = False
 
-# Prepare dropdown lists
+# 7) Prepare dropdown lists
 issuer_list = ["Select Issuer Name"] + list(issuer_encoder.classes_)
 industry_list = ["Select Industry"] + sorted(industry_encoder.classes_)
 
@@ -111,8 +101,8 @@ industry_list = ["Select Industry"] + sorted(industry_encoder.classes_)
 col1, col2 = st.columns([1, 2])
 
 with col1:
-    issuer_name = st.selectbox("🏢 Issuer Name", issuer_list, index=issuer_list.index(st.session_state['issuer_name']), key="issuer_name")
-    industry = st.selectbox("🏭 Industry", industry_list, index=industry_list.index(st.session_state['industry']), key="industry")
+    issuer_name = st.selectbox("🏢 Issuer Name", issuer_list, index=0 if st.session_state['reset'] else issuer_list.index(st.session_state.get('issuer_name', 'Select Issuer Name')), key="issuer_name")
+    industry = st.selectbox("🏭 Industry", industry_list, index=0 if st.session_state['reset'] else industry_list.index(st.session_state.get('industry', 'Select Industry')), key="industry")
 
 with col2:
     debt_to_equity = st.number_input("📉 Debt to Equity Ratio", step=0.01, key="debt_to_equity")
@@ -123,19 +113,19 @@ with col2:
 # Internally set default flag (hidden from UI)
 default_flag = 0
 
-# 7) Clear Input Button
+# 8) Clear Input Button
 if st.button("❌ Clear Inputs"):
+    st.session_state['reset'] = True  # Set reset flag
+    # Reset session state values for inputs
     st.session_state['issuer_name'] = "Select Issuer Name"
     st.session_state['industry'] = "Select Industry"
     st.session_state['debt_to_equity'] = 0.0
     st.session_state['ebitda_margin'] = 0.0
     st.session_state['interest_coverage'] = 0.0
     st.session_state['issue_size'] = 0.0
+    st.experimental_rerun()  # Rerun the app to clear inputs
 
-    # Rerun the app to reset form inputs
-    st.experimental_rerun()
-
-# 8) Prediction Logic
+# 9) Prediction Logic
 st.markdown('<div style="text-align: center; margin-top: 2rem;">', unsafe_allow_html=True)
 if st.button("🔍 Predict Credit Rating"):
     try:
@@ -171,14 +161,14 @@ if st.button("🔍 Predict Credit Rating"):
         st.error(f"❌ Prediction error: {e}")
 st.markdown('</div>', unsafe_allow_html=True)
 
-# 9) Historical data
+# 10) Historical data
 st.markdown('<div class="historical-data">', unsafe_allow_html=True)
 with st.expander("📜 Show Historical Data"):
     hist_df = pd.read_csv(historical_data_path)
     st.dataframe(hist_df)
 st.markdown('</div>', unsafe_allow_html=True)
 
-# 10) Footer
+# 11) Footer
 st.markdown("""<div class="footer">
     <hr style="margin-top: 2rem; margin-bottom: 1rem;" />
     <p>🔒 Secure & Private | 🏦 Powered by ML | 💡 Created by Your Name</p>
