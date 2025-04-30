@@ -7,7 +7,7 @@ import pandas as pd
 # 1) Set Streamlit page config
 st.set_page_config(page_title="Credit Rating Predictor", layout="centered")
 
-# 2) Custom CSS for Styling
+# 2) Custom CSS
 st.markdown("""
     <style>
     body {
@@ -63,7 +63,7 @@ st.markdown("""
     </style>
 """, unsafe_allow_html=True)
 
-# 3) Header with Logo and Title
+# 3) Header
 st.markdown("""
     <div style="text-align: center; margin-bottom: 0rem;">
         <img src="https://cdn-icons-png.flaticon.com/512/2331/2331970.png"
@@ -77,54 +77,57 @@ st.markdown("""
     </div>
 """, unsafe_allow_html=True)
 
-# 4) Load model and encoders
+# 4) Load models & encoders
 model = joblib.load('credit_rating_model.pkl')
 rating_encoder = joblib.load('rating_encoder.pkl')
 issuer_encoder = joblib.load('issuer_encoder.pkl')
 industry_encoder = joblib.load('industry_encoder.pkl')
 
-# 5) CSV setup
+# 5) Data setup
 historical_data_path = 'Simulated_CreditRating_Data.csv'
-columns = ['Issuer Name', 'Industry', 'Debt to Equity', 'EBITDA Margin', 'Interest Coverage',
-           'Issue Size (₹Cr)', 'DefaultFlag', 'Predicted Rating']
+columns = [
+    'Issuer Name','Industry','Debt to Equity','EBITDA Margin',
+    'Interest Coverage','Issue Size (₹Cr)','DefaultFlag','Predicted Rating'
+]
 
 if not os.path.exists(historical_data_path):
     pd.DataFrame(columns=columns).to_csv(historical_data_path, index=False)
 
-# 6) Input form with session_state
+# 6) Form Inputs
 col1, col2 = st.columns([1, 2])
 
-issuer_options = ["--Select--"] + list(issuer_encoder.classes_)
-industry_options = ["--Select--"] + sorted(industry_encoder.classes_)
-default_flag_options = ["--Select--", "0", "1"]
+# Prepare dropdown lists
+issuer_list = ["Select Issuer Name"] + list(issuer_encoder.classes_)
+industry_list = ["Select Industry"] + sorted(industry_encoder.classes_)
 
 with col1:
-    issuer_name = st.selectbox("🏢 Issuer Name", issuer_options)
-    industry = st.selectbox("🏭 Industry", industry_options)
-    default_flag_display = st.selectbox("⚠️ Default Flag", default_flag_options, help="Set to 1 if issuer has defaulted, else 0")
+    issuer_name = st.selectbox("🏢 Issuer Name", issuer_list, index=0)
+    industry = st.selectbox("🏭 Industry", industry_list, index=0)
 
 with col2:
-    debt_to_equity = st.number_input("📉 Debt to Equity Ratio", step=0.01, value=0.0)
-    ebitda_margin = st.number_input("💰 EBITDA Margin (%)", step=0.01, value=0.0)
-    interest_coverage = st.number_input("🧾 Interest Coverage Ratio", step=0.01, value=0.0)
-    issue_size = st.number_input("📦 Issue Size (₹ Crores)", step=1.0, value=0.0)
+    debt_to_equity = st.number_input("📉 Debt to Equity Ratio", step=0.01)
+    ebitda_margin = st.number_input("💰 EBITDA Margin (%)", step=0.01)
+    interest_coverage = st.number_input("🧾 Interest Coverage Ratio", step=0.01)
+    issue_size = st.number_input("📦 Issue Size (₹ Crores)", step=1.0)
 
-# 7) Predict Button Logic
+# Internally set default flag (hidden from UI)
+default_flag = 0
+
+# 7) Prediction Logic
 st.markdown('<div style="text-align: center; margin-top: 2rem;">', unsafe_allow_html=True)
 if st.button("🔍 Predict Credit Rating"):
-    if "--Select--" in [issuer_name, industry, default_flag_display]:
-        st.warning("⚠️ Please select valid values for all dropdowns before predicting.")
-    else:
-        try:
+    try:
+        if issuer_name == "Select Issuer Name" or industry == "Select Industry":
+            st.warning("⚠️ Please select both Issuer Name and Industry before predicting.")
+        else:
             issuer_idx = issuer_encoder.transform([issuer_name])[0]
             industry_idx = industry_encoder.transform([industry])[0]
-            default_flag = int(default_flag_display)
 
-            X_new = np.array([[debt_to_equity, ebitda_margin, interest_coverage, issue_size,
-                               issuer_idx, industry_idx, default_flag]]).reshape(1, -1)
+            X_new = np.array([[debt_to_equity, ebitda_margin, interest_coverage,
+                               issue_size, issuer_idx, industry_idx, default_flag]]).reshape(1, -1)
 
             if X_new.shape[1] != model.n_features_in_:
-                raise ValueError(f"Input features mismatch: Expected {model.n_features_in_}, got {X_new.shape[1]}")
+                raise ValueError(f"Input features mismatch: Expected {model.n_features_in_} features, got {X_new.shape[1]}")
 
             y_pred = model.predict(X_new)
             rating = rating_encoder.inverse_transform(y_pred)[0]
@@ -142,11 +145,13 @@ if st.button("🔍 Predict Credit Rating"):
             })
             new_row.to_csv(historical_data_path, mode='a', header=False, index=False)
 
-        except Exception as e:
-            st.error(f"❌ Prediction error: {e}")
+            st.experimental_rerun()
+
+    except Exception as e:
+        st.error(f"❌ Prediction error: {e}")
 st.markdown('</div>', unsafe_allow_html=True)
 
-# 8) Show historical data
+# 8) Historical data
 st.markdown('<div class="historical-data">', unsafe_allow_html=True)
 with st.expander("📜 Show Historical Data"):
     hist_df = pd.read_csv(historical_data_path)
