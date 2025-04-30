@@ -89,21 +89,17 @@ columns = [
 if not os.path.exists(historical_data_path):
     pd.DataFrame(columns=columns).to_csv(historical_data_path, index=False)
 
-# 6) Initialize session state if not already done
-if 'reset' not in st.session_state:
-    st.session_state['reset'] = False
-
-# 7) Prepare dropdown lists
+# 6) Prepare dropdown lists
 issuer_list = ["Select Issuer Name"] + list(issuer_encoder.classes_)
 industry_list = ["Select Industry"] + sorted(industry_encoder.classes_)
 
-# 8) Form Layout
+# 7) Form Layout
 col1, col2 = st.columns([1, 2])
 
 with col1:
     # Issuer Name and Industry selection
-    issuer_name = st.selectbox("🏢 Issuer Name", issuer_list, index=0 if st.session_state['reset'] else issuer_list.index(st.session_state.get('issuer_name', 'Select Issuer Name')), key="issuer_name")
-    industry = st.selectbox("🏭 Industry", industry_list, index=0 if st.session_state['reset'] else industry_list.index(st.session_state.get('industry', 'Select Industry')), key="industry")
+    issuer_name = st.selectbox("🏢 Issuer Name", issuer_list, index=0 if 'issuer_name' not in st.session_state else issuer_list.index(st.session_state['issuer_name']), key="issuer_name")
+    industry = st.selectbox("🏭 Industry", industry_list, index=0 if 'industry' not in st.session_state else industry_list.index(st.session_state['industry']), key="industry")
 
 with col2:
     # Financial inputs
@@ -115,19 +111,14 @@ with col2:
 # Internally set default flag (hidden from UI)
 default_flag = 0
 
-# 9) Clear Input Button
+# 8) Clear Input Button
 if st.button("❌ Clear Inputs"):
-    # Reset the session state
-    st.session_state['reset'] = True
-    st.session_state['issuer_name'] = "Select Issuer Name"
-    st.session_state['industry'] = "Select Industry"
-    st.session_state['debt_to_equity'] = 0.0
-    st.session_state['ebitda_margin'] = 0.0
-    st.session_state['interest_coverage'] = 0.0
-    st.session_state['issue_size'] = 0.0
-    st.experimental_rerun()  # Rerun the app to apply reset
+    # Reset all session state variables
+    for key in st.session_state.keys():
+        del st.session_state[key]  # Clear all session states
+    st.experimental_rerun()  # Refresh the page
 
-# 10) Prediction Logic
+# 9) Prediction Logic
 st.markdown('<div style="text-align: center; margin-top: 2rem;">', unsafe_allow_html=True)
 if st.button("🔍 Predict Credit Rating"):
     try:
@@ -163,14 +154,14 @@ if st.button("🔍 Predict Credit Rating"):
         st.error(f"❌ Prediction error: {e}")
 st.markdown('</div>', unsafe_allow_html=True)
 
-# 11) Historical data
+# 10) Historical data
 st.markdown('<div class="historical-data">', unsafe_allow_html=True)
 with st.expander("📜 Show Historical Data"):
     hist_df = pd.read_csv(historical_data_path)
     st.dataframe(hist_df)
 st.markdown('</div>', unsafe_allow_html=True)
 
-# 12) Footer
+# 11) Footer
 st.markdown("""<div class="footer">
     <hr style="margin-top: 2rem; margin-bottom: 1rem;" />
     <p>🔒 Secure & Private | 🏦 Powered by ML | 💡 Created by Your Name</p>
