@@ -69,9 +69,9 @@ st.markdown("""
 
 # 3) Header with hover-only subtitle
 st.markdown("""
-    <div style="text-align:center; margin-bottom:1rem;">
+    <div style="text-align:center; margin-bottom:0rem;">
         <img src="https://cdn-icons-png.flaticon.com/512/2331/2331970.png"
-             width="35" style="margin-bottom:0.2rem;" />
+             width="35" style="margin-bottom:0.0rem;" />
         <h1 class="title" style="color:#4CAF50; margin:0;">
             Credit Rating Predictor
         </h1>
