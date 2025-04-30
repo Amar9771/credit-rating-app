@@ -84,77 +84,67 @@ issuer_encoder = joblib.load('issuer_encoder.pkl')
 industry_encoder = joblib.load('industry_encoder.pkl')
 
 # 5) CSV setup
-historical_data_path = 'Simulated_CreditRating_Data.csv'  # Use local path
+historical_data_path = 'Simulated_CreditRating_Data.csv'
 columns = [
-    'Issuer Name','Industry','Debt to Equity','EBITDA Margin',
-    'Interest Coverage','Issue Size (₹Cr)','DefaultFlag','Predicted Rating'
+    'Issuer Name', 'Industry', 'Debt to Equity', 'EBITDA Margin',
+    'Interest Coverage', 'Issue Size (₹Cr)', 'DefaultFlag', 'Predicted Rating'
 ]
-
-# Check if file exists and create if not
 if not os.path.exists(historical_data_path):
     pd.DataFrame(columns=columns).to_csv(historical_data_path, index=False)
 
-# 6) Input form with session_state
+# 6) Session state defaults
+session_defaults = {
+    'issuer_name': issuer_encoder.classes_[0],
+    'industry': industry_encoder.classes_[0],
+    'default_flag': 0,
+    'debt_to_equity': 0.0,
+    'ebitda_margin': 0.0,
+    'interest_coverage': 0.0,
+    'issue_size': 0.0
+}
+for key, value in session_defaults.items():
+    if key not in st.session_state:
+        st.session_state[key] = value
+
+# 7) Input form
 col1, col2 = st.columns([1, 2])
-
-# Check if session_state values exist, otherwise set default
-if 'issuer_name' not in st.session_state:
-    st.session_state.issuer_name = ""
-if 'industry' not in st.session_state:
-    st.session_state.industry = industry_encoder.classes_[0]
-if 'default_flag' not in st.session_state:
-    st.session_state.default_flag = 0
-if 'debt_to_equity' not in st.session_state:
-    st.session_state.debt_to_equity = 0.0
-if 'ebitda_margin' not in st.session_state:
-    st.session_state.ebitda_margin = 0.0
-if 'interest_coverage' not in st.session_state:
-    st.session_state.interest_coverage = 0.0
-if 'issue_size' not in st.session_state:
-    st.session_state.issue_size = 0.0
-
 with col1:
-    # Ensure that session_state.issuer_name is in the issuer_encoder.classes_
-    if st.session_state.issuer_name not in issuer_encoder.classes_:
-        # Default to the first issuer if the stored one is not valid
-        st.session_state.issuer_name = issuer_encoder.classes_[0]
-
-    issuer_name = st.selectbox("🏢 Issuer Name", issuer_encoder.classes_, 
+    issuer_name = st.selectbox("🏢 Issuer Name", issuer_encoder.classes_,
                                index=issuer_encoder.classes_.tolist().index(st.session_state.issuer_name))
-    industry = st.selectbox("🏭 Industry", sorted(industry_encoder.classes_), 
+    industry = st.selectbox("🏭 Industry", sorted(industry_encoder.classes_),
                             index=sorted(industry_encoder.classes_).index(st.session_state.industry))
-    default_flag = st.selectbox("⚠️ Default Flag", [0, 1], help="Set to 1 if issuer has defaulted, else 0", 
+    default_flag = st.selectbox("⚠️ Default Flag", [0, 1],
+                                help="Set to 1 if issuer has defaulted, else 0",
                                 index=[0, 1].index(st.session_state.default_flag))
 with col2:
-    debt_to_equity = st.number_input("📉 Debt to Equity Ratio", step=0.01, value=st.session_state.debt_to_equity)
-    ebitda_margin = st.number_input("💰 EBITDA Margin (%)", step=0.01, value=st.session_state.ebitda_margin)
-    interest_coverage = st.number_input("🧾 Interest Coverage Ratio", step=0.01, value=st.session_state.interest_coverage)
-    issue_size = st.number_input("📦 Issue Size (₹ Crores)", step=1.0, value=st.session_state.issue_size)
+    debt_to_equity = st.number_input("📉 Debt to Equity Ratio", step=0.01,
+                                     value=st.session_state.debt_to_equity)
+    ebitda_margin = st.number_input("💰 EBITDA Margin (%)", step=0.01,
+                                    value=st.session_state.ebitda_margin)
+    interest_coverage = st.number_input("🧾 Interest Coverage Ratio", step=0.01,
+                                        value=st.session_state.interest_coverage)
+    issue_size = st.number_input("📦 Issue Size (₹ Crores)", step=1.0,
+                                 value=st.session_state.issue_size)
 
-# 7) Predict Button Logic
+# 8) Predict Button
 st.markdown('<div style="text-align: center; margin-top: 2rem;">', unsafe_allow_html=True)
 if st.button("🔍 Predict Credit Rating"):
     try:
-        # Ensure issuer is encoded correctly
+        # Encode features
         issuer_idx = issuer_encoder.transform([issuer_name])[0]
-
-        # Encode industry correctly
         industry_idx = industry_encoder.transform([industry])[0]
 
-        # Prepare input features for prediction, including DefaultFlag
-        X_new = np.array([[debt_to_equity, ebitda_margin, interest_coverage, issue_size,
-                           issuer_idx, industry_idx, default_flag]]).reshape(1, -1)
+        X_new = np.array([[debt_to_equity, ebitda_margin, interest_coverage,
+                           issue_size, issuer_idx, industry_idx, default_flag]])
 
-        # Check if features match the model's expectations
         if X_new.shape[1] != model.n_features_in_:
-            raise ValueError(f"Input features mismatch: Expected {model.n_features_in_} features, but got {X_new.shape[1]}")
+            raise ValueError(f"Expected {model.n_features_in_} features, got {X_new.shape[1]}")
 
-        # Perform prediction
         y_pred = model.predict(X_new)
         rating = rating_encoder.inverse_transform(y_pred)[0]
         st.success(f"🎯 Predicted Credit Rating: **{rating}**")
 
-        # Append to CSV (historical data)
+        # Save to CSV
         new_row = pd.DataFrame({
             'Issuer Name': [issuer_name],
             'Industry': [industry],
@@ -167,30 +157,23 @@ if st.button("🔍 Predict Credit Rating"):
         })
         new_row.to_csv(historical_data_path, mode='a', header=False, index=False)
 
-        # Reset the input values in session_state
-        st.session_state.issuer_name = ""
-        st.session_state.industry = industry_encoder.classes_[0]
-        st.session_state.default_flag = 0
-        st.session_state.debt_to_equity = 0.0
-        st.session_state.ebitda_margin = 0.0
-        st.session_state.interest_coverage = 0.0
-        st.session_state.issue_size = 0.0
-
-        # Clear the input fields visually
-        st.experimental_rerun()  # This will clear the inputs after submission
+        # Reset session state and rerun
+        for key in session_defaults:
+            st.session_state[key] = session_defaults[key]
+        st.experimental_rerun()
 
     except Exception as e:
         st.error(f"❌ Prediction error: {e}")
 st.markdown('</div>', unsafe_allow_html=True)
 
-# 8) Show historical data
+# 9) Historical data
 st.markdown('<div class="historical-data">', unsafe_allow_html=True)
 with st.expander("📜 Show Historical Data"):
     hist_df = pd.read_csv(historical_data_path)
     st.dataframe(hist_df)
 st.markdown('</div>', unsafe_allow_html=True)
 
-# 9) Footer
+# 10) Footer
 st.markdown("""
 <div class="footer">
     <hr style="margin-top: 2rem; margin-bottom: 1rem;" />
