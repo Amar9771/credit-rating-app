@@ -111,10 +111,10 @@ with col2:
 # Internally set default flag (hidden from UI)
 default_flag = 0
 
-# 8) Clear Input Button (Only refresh the page)
-if st.button("❌ Clear Inputs"):
-    # Trigger a refresh to reset inputs
-    st.experimental_rerun()  # Refresh the page
+# 8) Reset Form Button (Reload the page)
+if st.button("🔄 Reset Form"):
+    # Refresh the page by reloading it
+    st.markdown(f"<meta http-equiv='refresh' content='0; url=/' />", unsafe_allow_html=True)
 
 # 9) Prediction Logic
 st.markdown('<div style="text-align: center; margin-top: 2rem;">', unsafe_allow_html=True)
