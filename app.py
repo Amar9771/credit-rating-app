@@ -113,9 +113,9 @@ default_flag = 0
 
 # 8) Clear Input Button
 if st.button("❌ Clear Inputs"):
-    # Reset all session state variables
-    for key in st.session_state.keys():
-        del st.session_state[key]  # Clear all session states
+    # Clear session state and trigger a refresh by removing keys and allowing Streamlit to re-initialize
+    for key in list(st.session_state.keys()):
+        del st.session_state[key]
     st.experimental_rerun()  # Refresh the page
 
 # 9) Prediction Logic
