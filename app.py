@@ -76,9 +76,6 @@ st.markdown("""
                 Predict issuer ratings based on key financial indicators
             </span>
         </h1>
-        <p style="color: #666; font-size: 1.0rem; margin-top: 0;">
-            Predict issuer ratings based on key financial indicators
-        </p>
     </div>
     <style>
         .tooltip {
