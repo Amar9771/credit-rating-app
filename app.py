@@ -7,11 +7,86 @@ import pandas as pd
 # 1) Page config
 st.set_page_config(page_title="Credit Rating Predictor", layout="centered")
 
-# 2) Custom CSS (unchanged, retained)
-# [ ... keep your current custom CSS block here as-is ... ]
+# 2) Custom CSS (including hover-only subtitle)
+st.markdown("""
+    <style>
+    body {
+        background: linear-gradient(to right, #e0f2f1, #ffffff);
+        padding-top: 0;
+    }
+    .block-container {
+        max-width: 700px;
+        margin: -2px auto 1rem !important;
+        border: 2px solid #4CAF50 !important;
+        border-top-left-radius: 0 !important;
+        border-top-right-radius: 0 !important;
+        border-bottom-left-radius: 15px !important;
+        border-bottom-right-radius: 15px !important;
+        background-color: white;
+        padding: 2rem !important;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+    }
+    /* Hide subtitle by default */
+    .subtitle {
+        visibility: hidden;
+        opacity: 0;
+        transition: opacity 0.3s ease, visibility 0.3s ease;
+        color: #666;
+        font-size: 1.0rem;
+        margin-top: 0;
+    }
+    /* Show subtitle when hovering over the title */
+    .title:hover + .subtitle {
+        visibility: visible;
+        opacity: 1;
+    }
+    input[type="number"], select {
+        max-width: 300px !important;
+    }
+    button[kind="primary"] {
+        border-radius: 12px !important;
+        padding: 10px 20px !important;
+        background-color: #4CAF50;
+        color: white;
+        border: none;
+        font-weight: bold;
+        transition: background-color 0.3s ease;
+    }
+    button[kind="primary"]:hover {
+        background-color: #45a049;
+    }
+    .footer {
+        text-align: center;
+        margin-top: 2rem;
+        font-size: 0.9rem;
+        color: #777;
+    }
+    .historical-data {
+        margin-top: 4rem;
+    }
+    </style>
+""", unsafe_allow_html=True)
+# 3) Header with hover-only subtitle
+st.markdown("""
+    <div style="text-align:center; margin-bottom:1rem;">
+        <img src="https://cdn-icons-png.flaticon.com/512/2331/2331970.png"
+             width="35" style="margin-bottom:0.2rem;" />
+        <h1 class="title" style="color:#4CAF50; margin:0;">
+            Credit Rating Predictor
+        </h1>
+        <p class="subtitle">
+            Predict issuer ratings based on key financial indicators
+        </p>
+    </div>
+""", unsafe_allow_html=True)
 
-# 3) Header with hover-only subtitle (unchanged)
-# [ ... keep your header markdown block here as-is ... ]
+# 4) Load models & encoders
+model = joblib.load('credit_rating_model.pkl')
+…
+# 7) Build form inputs
+col1, col2 = st.columns([1, 2])
+…
+
 
 # 4) Load models & encoders
 model = joblib.load('credit_rating_model.pkl')
@@ -113,5 +188,12 @@ with st.expander("📜 Show Historical Data"):
     st.dataframe(df_hist)
 st.markdown('</div>', unsafe_allow_html=True)
 
-# 10) Footer (unchanged)
-# [ ... retain your footer block here ... ]
+# 10) Footer
+st.markdown("""
+<div class="footer">
+    <hr style="margin-top: 2rem; margin-bottom: 1rem;" />
+    <p>🔒 Secure & Private | 🏦 Powered by ML | 💡 BWR </p>
+</div>
+""", unsafe_allow_html=True)
+
+
