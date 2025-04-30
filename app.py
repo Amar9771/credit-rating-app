@@ -115,17 +115,9 @@ with col2:
 # Internally set default flag (hidden from UI)
 default_flag = 0
 
-# 9) Clear Input Button
+# 9) Clear Input Button (via app reload)
 if st.button("❌ Clear Inputs"):
-    # Reset the session state
-    st.session_state['reset'] = True
-    st.session_state['issuer_name'] = "Select Issuer Name"
-    st.session_state['industry'] = "Select Industry"
-    st.session_state['debt_to_equity'] = 0.0
-    st.session_state['ebitda_margin'] = 0.0
-    st.session_state['interest_coverage'] = 0.0
-    st.session_state['issue_size'] = 0.0
-    st.experimental_rerun()  # Rerun the app to apply reset
+    st.markdown(f"<meta http-equiv='refresh' content='0; url=/' />", unsafe_allow_html=True)
 
 # 10) Prediction Logic
 st.markdown('<div style="text-align: center; margin-top: 2rem;">', unsafe_allow_html=True)
