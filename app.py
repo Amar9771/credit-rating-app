@@ -97,7 +97,7 @@ if 'reset' not in st.session_state:
 issuer_list = ["Select Issuer Name"] + list(issuer_encoder.classes_)
 industry_list = ["Select Industry"] + sorted(industry_encoder.classes_)
 
-# 8) Form Layout with columns
+# 8) Form Layout
 col1, col2 = st.columns([1, 2])
 
 with col1:
@@ -115,64 +115,62 @@ with col2:
 # Internally set default flag (hidden from UI)
 default_flag = 0
 
-# 9) Clear Input Button and Predict Button using columns
-col1, col2 = st.columns([1, 1])  # Create two equal columns
+# 9) Clear Input Button
+if st.button("❌ Clear Inputs"):
+    # Reset the session state
+    st.session_state['reset'] = True
+    st.session_state['issuer_name'] = "Select Issuer Name"
+    st.session_state['industry'] = "Select Industry"
+    st.session_state['debt_to_equity'] = 0.0
+    st.session_state['ebitda_margin'] = 0.0
+    st.session_state['interest_coverage'] = 0.0
+    st.session_state['issue_size'] = 0.0
+    st.experimental_rerun()  # Rerun the app to apply reset
 
-with col1:
-    if st.button("📊 Predict Rating"):
-        try:
-            # Your prediction logic
-            if issuer_name == "Select Issuer Name" or industry == "Select Industry":
-                st.warning("⚠️ Please select both Issuer Name and Industry before predicting.")
-            else:
-                issuer_idx = issuer_encoder.transform([issuer_name])[0]
-                industry_idx = industry_encoder.transform([industry])[0]
+# 10) Prediction Logic
+st.markdown('<div style="text-align: center; margin-top: 2rem;">', unsafe_allow_html=True)
+if st.button("🔍 Predict Credit Rating"):
+    try:
+        if issuer_name == "Select Issuer Name" or industry == "Select Industry":
+            st.warning("⚠️ Please select both Issuer Name and Industry before predicting.")
+        else:
+            issuer_idx = issuer_encoder.transform([issuer_name])[0]
+            industry_idx = industry_encoder.transform([industry])[0]
 
-                X_new = np.array([[debt_to_equity, ebitda_margin, interest_coverage,
-                                   issue_size, issuer_idx, industry_idx, default_flag]]).reshape(1, -1)
+            X_new = np.array([[debt_to_equity, ebitda_margin, interest_coverage,
+                               issue_size, issuer_idx, industry_idx, default_flag]]).reshape(1, -1)
 
-                if X_new.shape[1] != model.n_features_in_:
-                    raise ValueError(f"Input features mismatch: Expected {model.n_features_in_} features, got {X_new.shape[1]}")
+            if X_new.shape[1] != model.n_features_in_:
+                raise ValueError(f"Input features mismatch: Expected {model.n_features_in_} features, got {X_new.shape[1]}")
 
-                y_pred = model.predict(X_new)
-                rating = rating_encoder.inverse_transform(y_pred)[0]
-                st.success(f"🎯 Predicted Credit Rating: **{rating}**")
+            y_pred = model.predict(X_new)
+            rating = rating_encoder.inverse_transform(y_pred)[0]
+            st.success(f"🎯 Predicted Credit Rating: **{rating}**")
 
-                new_row = pd.DataFrame({
-                    'Issuer Name': [issuer_name],
-                    'Industry': [industry],
-                    'Debt to Equity': [debt_to_equity],
-                    'EBITDA Margin': [ebitda_margin],
-                    'Interest Coverage': [interest_coverage],
-                    'Issue Size (₹Cr)': [issue_size],
-                    'DefaultFlag': [default_flag],
-                    'Predicted Rating': [rating]
-                })
-                new_row.to_csv(historical_data_path, mode='a', header=False, index=False)
+            new_row = pd.DataFrame({
+                'Issuer Name': [issuer_name],
+                'Industry': [industry],
+                'Debt to Equity': [debt_to_equity],
+                'EBITDA Margin': [ebitda_margin],
+                'Interest Coverage': [interest_coverage],
+                'Issue Size (₹Cr)': [issue_size],
+                'DefaultFlag': [default_flag],
+                'Predicted Rating': [rating]
+            })
+            new_row.to_csv(historical_data_path, mode='a', header=False, index=False)
 
-        except Exception as e:
-            st.error(f"❌ Prediction error: {e}")
+    except Exception as e:
+        st.error(f"❌ Prediction error: {e}")
+st.markdown('</div>', unsafe_allow_html=True)
 
-with col2:
-    if st.button("🔄 Clear Inputs"):
-        # Reset the session state
-        st.session_state['reset'] = True
-        st.session_state['issuer_name'] = "Select Issuer Name"
-        st.session_state['industry'] = "Select Industry"
-        st.session_state['debt_to_equity'] = 0.0
-        st.session_state['ebitda_margin'] = 0.0
-        st.session_state['interest_coverage'] = 0.0
-        st.session_state['issue_size'] = 0.0
-        st.experimental_rerun()  # Rerun the app to apply reset
-
-# 10) Historical data
+# 11) Historical data
 st.markdown('<div class="historical-data">', unsafe_allow_html=True)
 with st.expander("📜 Show Historical Data"):
     hist_df = pd.read_csv(historical_data_path)
     st.dataframe(hist_df)
 st.markdown('</div>', unsafe_allow_html=True)
 
-# 11) Footer
+# 12) Footer
 st.markdown("""<div class="footer">
     <hr style="margin-top: 2rem; margin-bottom: 1rem;" />
     <p>🔒 Secure & Private | 🏦 Powered by ML | 💡 Created by Your Name</p>
