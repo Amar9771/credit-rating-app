@@ -99,7 +99,7 @@ col1, col2 = st.columns([1, 2])
 
 # Check if session_state values exist, otherwise set default
 if 'issuer_name' not in st.session_state:
-    st.session_state.issuer_name = issuer_encoder.classes_[0]  # default to first issuer
+    st.session_state.issuer_name = ""
 if 'industry' not in st.session_state:
     st.session_state.industry = industry_encoder.classes_[0]
 if 'default_flag' not in st.session_state:
@@ -114,9 +114,17 @@ if 'issue_size' not in st.session_state:
     st.session_state.issue_size = 0.0
 
 with col1:
-    issuer_name = st.selectbox("🏢 Issuer Name", issuer_encoder.classes_, index=issuer_encoder.classes_.tolist().index(st.session_state.issuer_name))
-    industry = st.selectbox("🏭 Industry", sorted(industry_encoder.classes_), index=sorted(industry_encoder.classes_).index(st.session_state.industry))
-    default_flag = st.selectbox("⚠️ Default Flag", [0, 1], help="Set to 1 if issuer has defaulted, else 0", index=[0, 1].index(st.session_state.default_flag))
+    # Ensure that session_state.issuer_name is in the issuer_encoder.classes_
+    if st.session_state.issuer_name not in issuer_encoder.classes_:
+        # Default to the first issuer if the stored one is not valid
+        st.session_state.issuer_name = issuer_encoder.classes_[0]
+
+    issuer_name = st.selectbox("🏢 Issuer Name", issuer_encoder.classes_, 
+                               index=issuer_encoder.classes_.tolist().index(st.session_state.issuer_name))
+    industry = st.selectbox("🏭 Industry", sorted(industry_encoder.classes_), 
+                            index=sorted(industry_encoder.classes_).index(st.session_state.industry))
+    default_flag = st.selectbox("⚠️ Default Flag", [0, 1], help="Set to 1 if issuer has defaulted, else 0", 
+                                index=[0, 1].index(st.session_state.default_flag))
 with col2:
     debt_to_equity = st.number_input("📉 Debt to Equity Ratio", step=0.01, value=st.session_state.debt_to_equity)
     ebitda_margin = st.number_input("💰 EBITDA Margin (%)", step=0.01, value=st.session_state.ebitda_margin)
@@ -128,10 +136,7 @@ st.markdown('<div style="text-align: center; margin-top: 2rem;">', unsafe_allow_
 if st.button("🔍 Predict Credit Rating"):
     try:
         # Ensure issuer is encoded correctly
-        if issuer_name in issuer_encoder.classes_:
-            issuer_idx = issuer_encoder.transform([issuer_name])[0]
-        else:
-            issuer_idx = -1  # handle unknown issuer (or you could show a warning)
+        issuer_idx = issuer_encoder.transform([issuer_name])[0]
 
         # Encode industry correctly
         industry_idx = industry_encoder.transform([industry])[0]
@@ -163,7 +168,7 @@ if st.button("🔍 Predict Credit Rating"):
         new_row.to_csv(historical_data_path, mode='a', header=False, index=False)
 
         # Reset the input values in session_state
-        st.session_state.issuer_name = issuer_encoder.classes_[0]  # Reset to default value
+        st.session_state.issuer_name = ""
         st.session_state.industry = industry_encoder.classes_[0]
         st.session_state.default_flag = 0
         st.session_state.debt_to_equity = 0.0
