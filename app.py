@@ -63,16 +63,16 @@ st.markdown("""
     </style>
 """, unsafe_allow_html=True)
 
-# 3) Header
+# 3) Header with hover effect using CSS
 st.markdown("""
     <div style="text-align: center; margin-bottom: 0rem;">
         <img src="https://cdn-icons-png.flaticon.com/512/2331/2331970.png"
-             width="60" style="margin-bottom: 0px;" />
+             width="40" style="margin-bottom: 0px;" />
         <h1 style="color: #4CAF50; margin-bottom: 0.0rem; position: relative;">
             Credit Rating Predictor
             <span style="position: absolute; bottom: -1.5rem; left: 50%; transform: translateX(-50%);
                          font-size: 1rem; color: #666; visibility: hidden; opacity: 0;
-                         transition: opacity 0.3s ease, visibility 0.3s ease;" id="tooltip">
+                         transition: opacity 0.3s ease, visibility 0.3s ease;" class="tooltip">
                 Predict issuer ratings based on key financial indicators
             </span>
         </h1>
@@ -80,18 +80,18 @@ st.markdown("""
             Predict issuer ratings based on key financial indicators
         </p>
     </div>
-    <script>
-        const title = document.querySelector('h1');
-        const tooltip = document.getElementById('tooltip');
-        title.addEventListener('mouseover', () => {
-            tooltip.style.visibility = 'visible';
-            tooltip.style.opacity = 1;
-        });
-        title.addEventListener('mouseout', () => {
-            tooltip.style.visibility = 'hidden';
-            tooltip.style.opacity = 0;
-        });
-    </script>
+    <style>
+        .tooltip {
+            visibility: hidden;
+            opacity: 0;
+            transition: opacity 0.3s ease, visibility 0.3s ease;
+        }
+        
+        h1:hover .tooltip {
+            visibility: visible;
+            opacity: 1;
+        }
+    </style>
 """, unsafe_allow_html=True)
 
 
