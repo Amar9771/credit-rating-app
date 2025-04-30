@@ -101,14 +101,14 @@ issuer_list = ["Select Issuer Name"] + list(issuer_encoder.classes_)
 industry_list = ["Select Industry"] + sorted(industry_encoder.classes_)
 
 with col1:
-    issuer_name = st.selectbox("🏢 Issuer Name", issuer_list, index=0)
-    industry = st.selectbox("🏭 Industry", industry_list, index=0)
+    issuer_name = st.selectbox("🏢 Issuer Name", issuer_list, index=0, key="issuer_name")
+    industry = st.selectbox("🏭 Industry", industry_list, index=0, key="industry")
 
 with col2:
-    debt_to_equity = st.number_input("📉 Debt to Equity Ratio", step=0.01)
-    ebitda_margin = st.number_input("💰 EBITDA Margin (%)", step=0.01)
-    interest_coverage = st.number_input("🧾 Interest Coverage Ratio", step=0.01)
-    issue_size = st.number_input("📦 Issue Size (₹ Crores)", step=1.0)
+    debt_to_equity = st.number_input("📉 Debt to Equity Ratio", step=0.01, key="debt_to_equity")
+    ebitda_margin = st.number_input("💰 EBITDA Margin (%)", step=0.01, key="ebitda_margin")
+    interest_coverage = st.number_input("🧾 Interest Coverage Ratio", step=0.01, key="interest_coverage")
+    issue_size = st.number_input("📦 Issue Size (₹ Crores)", step=1.0, key="issue_size")
 
 # Internally set default flag (hidden from UI)
 default_flag = 0
@@ -145,7 +145,15 @@ if st.button("🔍 Predict Credit Rating"):
             })
             new_row.to_csv(historical_data_path, mode='a', header=False, index=False)
 
-            st.rerun()  # Replaced experimental_rerun with rerun
+            # Reset the input fields after prediction
+            st.session_state["issuer_name"] = "Select Issuer Name"
+            st.session_state["industry"] = "Select Industry"
+            st.session_state["debt_to_equity"] = 0.0
+            st.session_state["ebitda_margin"] = 0.0
+            st.session_state["interest_coverage"] = 0.0
+            st.session_state["issue_size"] = 0.0
+
+            st.rerun()  # Re-run the app to clear inputs
 
     except Exception as e:
         st.error(f"❌ Prediction error: {e}")
