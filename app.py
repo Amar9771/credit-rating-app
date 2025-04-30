@@ -7,7 +7,7 @@ import pandas as pd
 # 1) Page config
 st.set_page_config(page_title="Credit Rating Predictor", layout="centered")
 
-# 2) Custom CSS (including hover-only subtitle)
+# 2) Custom CSS (including hover-only subtitle) with reduced top padding & header margin
 st.markdown("""
     <style>
     body {
@@ -22,8 +22,9 @@ st.markdown("""
         border-top-right-radius: 0 !important;
         border-bottom-left-radius: 15px !important;
         border-bottom-right-radius: 15px !important;
+        /* REDUCED top padding from 2rem → 1rem */
+        padding: 1rem 2rem 2rem 2rem !important;
         background-color: white;
-        padding: 2rem !important;
         box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
     }
     .subtitle {
@@ -62,12 +63,16 @@ st.markdown("""
     .historical-data {
         margin-top: 4rem;
     }
+    /* REDUCED space under header: from 1rem → 0.5rem */
+    .header-container {
+        margin-bottom: 0.5rem !important;
+    }
     </style>
 """, unsafe_allow_html=True)
 
 # 3) Header with hover-only subtitle
 st.markdown("""
-    <div style="text-align:center; margin-bottom:1rem;">
+    <div class="header-container" style="text-align:center;">
         <img src="https://cdn-icons-png.flaticon.com/512/2331/2331970.png"
              width="35" style="margin-bottom:0.2rem;" />
         <h1 class="title" style="color:#4CAF50; margin:0;">
@@ -84,7 +89,7 @@ model = joblib.load('credit_rating_model.pkl')
 rating_encoder   = joblib.load('rating_encoder.pkl')
 industry_encoder = joblib.load('industry_encoder.pkl')
 
-# 5) Ensure historical data file exists (no Issuer Name column)
+# 5) Ensure historical data file exists
 historical_data_path = 'Simulated_CreditRating_Data.csv'
 columns = [
     'Industry','Debt to Equity','EBITDA Margin',
@@ -93,7 +98,7 @@ columns = [
 if not os.path.exists(historical_data_path):
     pd.DataFrame(columns=columns).to_csv(historical_data_path, index=False)
 
-# 6) Initialize session_state defaults (drop issuer_name)
+# 6) Initialize session_state defaults
 for key, default in {
     'industry':         "Select Industry",
     'debt_to_equity':    0.0,
@@ -106,7 +111,6 @@ for key, default in {
 
 # 7) Build form inputs
 industry_list = ["Select Industry"] + sorted(industry_encoder.classes_)
-
 col1, col2 = st.columns([1, 2])
 with col1:
     industry = st.selectbox(
@@ -121,21 +125,18 @@ with col2:
     interest_coverage = st.number_input("🧾 Interest Coverage Ratio", step=0.01, key="interest_coverage")
     issue_size        = st.number_input("📦 Issue Size (₹ Crores)", step=1.0, key="issue_size")
 
-default_flag = 0  # hidden from UI
+default_flag = 0
 
-# 8) Prediction & Clear buttons side by side
+# 8) Prediction & Clear buttons
 st.markdown('<div style="text-align:center; margin-top:2rem;">', unsafe_allow_html=True)
 btn_col1, btn_col2 = st.columns([1,1])
-
 with btn_col1:
     if st.button("🔍 Predict Credit Rating"):
         try:
             if industry == "Select Industry":
                 st.warning("⚠️ Please select an Industry before predicting.")
             else:
-                # encode industry
                 industry_idx = industry_encoder.transform([industry])[0]
-                # prepare features (no issuer_idx)
                 X_new = np.array([
                     debt_to_equity,
                     ebitda_margin,
@@ -144,17 +145,11 @@ with btn_col1:
                     industry_idx,
                     default_flag
                 ]).reshape(1, -1)
-
-                # sanity check feature count
                 if X_new.shape[1] != model.n_features_in_:
                     raise ValueError(f"Expected {model.n_features_in_} features, got {X_new.shape[1]}")
-
-                # predict
                 y_pred = model.predict(X_new)
                 rating = rating_encoder.inverse_transform(y_pred)[0]
                 st.success(f"🎯 Predicted Credit Rating: **{rating}**")
-
-                # append to CSV
                 new_row = pd.DataFrame({
                     'Industry':         [industry],
                     'Debt to Equity':   [debt_to_equity],
@@ -165,16 +160,13 @@ with btn_col1:
                     'Predicted Rating': [rating]
                 })
                 new_row.to_csv(historical_data_path, mode='a', header=False, index=False)
-
         except Exception as e:
             st.error(f"❌ Prediction error: {e}")
-
 with btn_col2:
     if st.button("🧹 Clear Inputs"):
         for k in ['industry','debt_to_equity','ebitda_margin','interest_coverage','issue_size']:
             st.session_state[k] = "Select Industry" if k=='industry' else 0.0
         st.experimental_rerun()
-
 st.markdown('</div>', unsafe_allow_html=True)
 
 # 9) Historical data expander
