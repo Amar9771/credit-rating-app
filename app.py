@@ -68,14 +68,32 @@ st.markdown("""
     <div style="text-align: center; margin-bottom: 0rem;">
         <img src="https://cdn-icons-png.flaticon.com/512/2331/2331970.png"
              width="40" style="margin-bottom: 0px;" />
-        <h1 style="color: #4CAF50; margin-bottom: 0.0rem;">
+        <h1 style="color: #4CAF50; margin-bottom: 0.0rem; position: relative;">
             Credit Rating Predictor
+            <span style="position: absolute; bottom: -1.5rem; left: 50%; transform: translateX(-50%);
+                         font-size: 1rem; color: #666; visibility: hidden; opacity: 0;
+                         transition: opacity 0.3s ease, visibility 0.3s ease;" id="tooltip">
+                Predict issuer ratings based on key financial indicators
+            </span>
         </h1>
         <p style="color: #666; font-size: 1.0rem; margin-top: 0;">
             Predict issuer ratings based on key financial indicators
         </p>
     </div>
+    <script>
+        const title = document.querySelector('h1');
+        const tooltip = document.getElementById('tooltip');
+        title.addEventListener('mouseover', () => {
+            tooltip.style.visibility = 'visible';
+            tooltip.style.opacity = 1;
+        });
+        title.addEventListener('mouseout', () => {
+            tooltip.style.visibility = 'hidden';
+            tooltip.style.opacity = 0;
+        });
+    </script>
 """, unsafe_allow_html=True)
+
 
 # 4) Load models & encoders
 model = joblib.load('credit_rating_model.pkl')
