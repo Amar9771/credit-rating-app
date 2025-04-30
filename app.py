@@ -93,16 +93,30 @@ columns = [
 if not os.path.exists(historical_data_path):
     pd.DataFrame(columns=columns).to_csv(historical_data_path, index=False)
 
-# 6) Form Inputs
-col1, col2 = st.columns([1, 2])
+# 6) Form Inputs (reset session state before inputs)
+if 'issuer_name' not in st.session_state:
+    st.session_state['issuer_name'] = "Select Issuer Name"
+if 'industry' not in st.session_state:
+    st.session_state['industry'] = "Select Industry"
+if 'debt_to_equity' not in st.session_state:
+    st.session_state['debt_to_equity'] = 0.0
+if 'ebitda_margin' not in st.session_state:
+    st.session_state['ebitda_margin'] = 0.0
+if 'interest_coverage' not in st.session_state:
+    st.session_state['interest_coverage'] = 0.0
+if 'issue_size' not in st.session_state:
+    st.session_state['issue_size'] = 0.0
 
 # Prepare dropdown lists
 issuer_list = ["Select Issuer Name"] + list(issuer_encoder.classes_)
 industry_list = ["Select Industry"] + sorted(industry_encoder.classes_)
 
+# Form Layout
+col1, col2 = st.columns([1, 2])
+
 with col1:
-    issuer_name = st.selectbox("🏢 Issuer Name", issuer_list, index=0, key="issuer_name")
-    industry = st.selectbox("🏭 Industry", industry_list, index=0, key="industry")
+    issuer_name = st.selectbox("🏢 Issuer Name", issuer_list, index=issuer_list.index(st.session_state['issuer_name']), key="issuer_name")
+    industry = st.selectbox("🏭 Industry", industry_list, index=industry_list.index(st.session_state['industry']), key="industry")
 
 with col2:
     debt_to_equity = st.number_input("📉 Debt to Equity Ratio", step=0.01, key="debt_to_equity")
@@ -145,15 +159,16 @@ if st.button("🔍 Predict Credit Rating"):
             })
             new_row.to_csv(historical_data_path, mode='a', header=False, index=False)
 
-            # Reset the input fields after prediction
-            st.session_state["issuer_name"] = "Select Issuer Name"
-            st.session_state["industry"] = "Select Industry"
-            st.session_state["debt_to_equity"] = 0.0
-            st.session_state["ebitda_margin"] = 0.0
-            st.session_state["interest_coverage"] = 0.0
-            st.session_state["issue_size"] = 0.0
+            # Clear the inputs by resetting session state
+            st.session_state['issuer_name'] = "Select Issuer Name"
+            st.session_state['industry'] = "Select Industry"
+            st.session_state['debt_to_equity'] = 0.0
+            st.session_state['ebitda_margin'] = 0.0
+            st.session_state['interest_coverage'] = 0.0
+            st.session_state['issue_size'] = 0.0
 
-            st.rerun()  # Re-run the app to clear inputs
+            # Rerun the app to reset the form
+            st.experimental_rerun()
 
     except Exception as e:
         st.error(f"❌ Prediction error: {e}")
