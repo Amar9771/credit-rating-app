@@ -101,10 +101,12 @@ industry_list = ["Select Industry"] + sorted(industry_encoder.classes_)
 col1, col2 = st.columns([1, 2])
 
 with col1:
+    # Issuer Name and Industry selection
     issuer_name = st.selectbox("🏢 Issuer Name", issuer_list, index=0 if st.session_state['reset'] else issuer_list.index(st.session_state.get('issuer_name', 'Select Issuer Name')), key="issuer_name")
     industry = st.selectbox("🏭 Industry", industry_list, index=0 if st.session_state['reset'] else industry_list.index(st.session_state.get('industry', 'Select Industry')), key="industry")
 
 with col2:
+    # Financial inputs
     debt_to_equity = st.number_input("📉 Debt to Equity Ratio", step=0.01, value=st.session_state.get('debt_to_equity', 0.0), key="debt_to_equity")
     ebitda_margin = st.number_input("💰 EBITDA Margin (%)", step=0.01, value=st.session_state.get('ebitda_margin', 0.0), key="ebitda_margin")
     interest_coverage = st.number_input("🧾 Interest Coverage Ratio", step=0.01, value=st.session_state.get('interest_coverage', 0.0), key="interest_coverage")
@@ -115,9 +117,8 @@ default_flag = 0
 
 # 9) Clear Input Button
 if st.button("❌ Clear Inputs"):
-    # Set reset flag and rerun the app
-    st.session_state['reset'] = True
     # Reset the session state
+    st.session_state['reset'] = True
     st.session_state['issuer_name'] = "Select Issuer Name"
     st.session_state['industry'] = "Select Industry"
     st.session_state['debt_to_equity'] = 0.0
