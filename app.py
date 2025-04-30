@@ -85,95 +85,75 @@ industry_encoder = joblib.load('industry_encoder.pkl')
 
 # 5) CSV setup
 historical_data_path = 'Simulated_CreditRating_Data.csv'
-columns = [
-    'Issuer Name', 'Industry', 'Debt to Equity', 'EBITDA Margin',
-    'Interest Coverage', 'Issue Size (₹Cr)', 'DefaultFlag', 'Predicted Rating'
-]
+columns = ['Issuer Name', 'Industry', 'Debt to Equity', 'EBITDA Margin', 'Interest Coverage',
+           'Issue Size (₹Cr)', 'DefaultFlag', 'Predicted Rating']
+
 if not os.path.exists(historical_data_path):
     pd.DataFrame(columns=columns).to_csv(historical_data_path, index=False)
 
-# 6) Session state defaults
-session_defaults = {
-    'issuer_name': issuer_encoder.classes_[0],
-    'industry': industry_encoder.classes_[0],
-    'default_flag': 0,
-    'debt_to_equity': 0.0,
-    'ebitda_margin': 0.0,
-    'interest_coverage': 0.0,
-    'issue_size': 0.0
-}
-for key, value in session_defaults.items():
-    if key not in st.session_state:
-        st.session_state[key] = value
-
-# 7) Input form
+# 6) Input form with session_state
 col1, col2 = st.columns([1, 2])
-with col1:
-    issuer_name = st.selectbox("🏢 Issuer Name", issuer_encoder.classes_,
-                               index=issuer_encoder.classes_.tolist().index(st.session_state.issuer_name))
-    industry = st.selectbox("🏭 Industry", sorted(industry_encoder.classes_),
-                            index=sorted(industry_encoder.classes_).index(st.session_state.industry))
-    default_flag = st.selectbox("⚠️ Default Flag", [0, 1],
-                                help="Set to 1 if issuer has defaulted, else 0",
-                                index=[0, 1].index(st.session_state.default_flag))
-with col2:
-    debt_to_equity = st.number_input("📉 Debt to Equity Ratio", step=0.01,
-                                     value=st.session_state.debt_to_equity)
-    ebitda_margin = st.number_input("💰 EBITDA Margin (%)", step=0.01,
-                                    value=st.session_state.ebitda_margin)
-    interest_coverage = st.number_input("🧾 Interest Coverage Ratio", step=0.01,
-                                        value=st.session_state.interest_coverage)
-    issue_size = st.number_input("📦 Issue Size (₹ Crores)", step=1.0,
-                                 value=st.session_state.issue_size)
 
-# 8) Predict Button
+issuer_options = ["--Select--"] + list(issuer_encoder.classes_)
+industry_options = ["--Select--"] + sorted(industry_encoder.classes_)
+default_flag_options = ["--Select--", "0", "1"]
+
+with col1:
+    issuer_name = st.selectbox("🏢 Issuer Name", issuer_options)
+    industry = st.selectbox("🏭 Industry", industry_options)
+    default_flag_display = st.selectbox("⚠️ Default Flag", default_flag_options, help="Set to 1 if issuer has defaulted, else 0")
+
+with col2:
+    debt_to_equity = st.number_input("📉 Debt to Equity Ratio", step=0.01, value=0.0)
+    ebitda_margin = st.number_input("💰 EBITDA Margin (%)", step=0.01, value=0.0)
+    interest_coverage = st.number_input("🧾 Interest Coverage Ratio", step=0.01, value=0.0)
+    issue_size = st.number_input("📦 Issue Size (₹ Crores)", step=1.0, value=0.0)
+
+# 7) Predict Button Logic
 st.markdown('<div style="text-align: center; margin-top: 2rem;">', unsafe_allow_html=True)
 if st.button("🔍 Predict Credit Rating"):
-    try:
-        # Encode features
-        issuer_idx = issuer_encoder.transform([issuer_name])[0]
-        industry_idx = industry_encoder.transform([industry])[0]
+    if "--Select--" in [issuer_name, industry, default_flag_display]:
+        st.warning("⚠️ Please select valid values for all dropdowns before predicting.")
+    else:
+        try:
+            issuer_idx = issuer_encoder.transform([issuer_name])[0]
+            industry_idx = industry_encoder.transform([industry])[0]
+            default_flag = int(default_flag_display)
 
-        X_new = np.array([[debt_to_equity, ebitda_margin, interest_coverage,
-                           issue_size, issuer_idx, industry_idx, default_flag]])
+            X_new = np.array([[debt_to_equity, ebitda_margin, interest_coverage, issue_size,
+                               issuer_idx, industry_idx, default_flag]]).reshape(1, -1)
 
-        if X_new.shape[1] != model.n_features_in_:
-            raise ValueError(f"Expected {model.n_features_in_} features, got {X_new.shape[1]}")
+            if X_new.shape[1] != model.n_features_in_:
+                raise ValueError(f"Input features mismatch: Expected {model.n_features_in_}, got {X_new.shape[1]}")
 
-        y_pred = model.predict(X_new)
-        rating = rating_encoder.inverse_transform(y_pred)[0]
-        st.success(f"🎯 Predicted Credit Rating: **{rating}**")
+            y_pred = model.predict(X_new)
+            rating = rating_encoder.inverse_transform(y_pred)[0]
+            st.success(f"🎯 Predicted Credit Rating: **{rating}**")
 
-        # Save to CSV
-        new_row = pd.DataFrame({
-            'Issuer Name': [issuer_name],
-            'Industry': [industry],
-            'Debt to Equity': [debt_to_equity],
-            'EBITDA Margin': [ebitda_margin],
-            'Interest Coverage': [interest_coverage],
-            'Issue Size (₹Cr)': [issue_size],
-            'DefaultFlag': [default_flag],
-            'Predicted Rating': [rating]
-        })
-        new_row.to_csv(historical_data_path, mode='a', header=False, index=False)
+            new_row = pd.DataFrame({
+                'Issuer Name': [issuer_name],
+                'Industry': [industry],
+                'Debt to Equity': [debt_to_equity],
+                'EBITDA Margin': [ebitda_margin],
+                'Interest Coverage': [interest_coverage],
+                'Issue Size (₹Cr)': [issue_size],
+                'DefaultFlag': [default_flag],
+                'Predicted Rating': [rating]
+            })
+            new_row.to_csv(historical_data_path, mode='a', header=False, index=False)
 
-        # Reset session state and rerun
-        for key in session_defaults:
-            st.session_state[key] = session_defaults[key]
-        st.experimental_rerun()
-
-    except Exception as e:
-        st.error(f"❌ Prediction error: {e}")
+        except Exception as e:
+            st.error(f"❌ Prediction error: {e}")
 st.markdown('</div>', unsafe_allow_html=True)
 
-# 9) Historical data
+# 8) Show historical data
 st.markdown('<div class="historical-data">', unsafe_allow_html=True)
 with st.expander("📜 Show Historical Data"):
     hist_df = pd.read_csv(historical_data_path)
     st.dataframe(hist_df)
 st.markdown('</div>', unsafe_allow_html=True)
 
-# 10) Footer
+# 9) Footer
 st.markdown("""
 <div class="footer">
     <hr style="margin-top: 2rem; margin-bottom: 1rem;" />
