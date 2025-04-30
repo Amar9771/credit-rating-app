@@ -87,7 +87,7 @@ industry_encoder = joblib.load('industry_encoder.pkl')
 historical_data_path = 'Simulated_CreditRating_Data.csv'
 columns = [
     'Issuer Name','Industry','Debt to Equity','EBITDA Margin',
-    'Interest Coverage','Issue Size (₹Cr)','DefaultFlag','Predicted Rating'
+    'Interest Coverage','Issue Size (₹Cr)','Predicted Rating'
 ]
 
 if not os.path.exists(historical_data_path):
@@ -140,7 +140,6 @@ if st.button("🔍 Predict Credit Rating"):
                 'EBITDA Margin': [ebitda_margin],
                 'Interest Coverage': [interest_coverage],
                 'Issue Size (₹Cr)': [issue_size],
-                'DefaultFlag': [default_flag],
                 'Predicted Rating': [rating]
             })
             new_row.to_csv(historical_data_path, mode='a', header=False, index=False)
@@ -151,10 +150,11 @@ if st.button("🔍 Predict Credit Rating"):
         st.error(f"❌ Prediction error: {e}")
 st.markdown('</div>', unsafe_allow_html=True)
 
-# 8) Historical data
+# 8) Historical data (Excluding DefaultFlag from display)
 st.markdown('<div class="historical-data">', unsafe_allow_html=True)
 with st.expander("📜 Show Historical Data"):
     hist_df = pd.read_csv(historical_data_path)
+    hist_df = hist_df.drop(columns=['DefaultFlag'])  # Remove DefaultFlag column for display
     st.dataframe(hist_df)
 st.markdown('</div>', unsafe_allow_html=True)
 
