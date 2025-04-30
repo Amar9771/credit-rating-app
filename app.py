@@ -89,7 +89,7 @@ columns = [
 if not os.path.exists(historical_data_path):
     pd.DataFrame(columns=columns).to_csv(historical_data_path, index=False)
 
-# 6) Session state initialization
+# 6) Initialize session state if not already done
 if 'reset' not in st.session_state:
     st.session_state['reset'] = False
 
@@ -97,7 +97,7 @@ if 'reset' not in st.session_state:
 issuer_list = ["Select Issuer Name"] + list(issuer_encoder.classes_)
 industry_list = ["Select Industry"] + sorted(industry_encoder.classes_)
 
-# Form Layout
+# 8) Form Layout
 col1, col2 = st.columns([1, 2])
 
 with col1:
@@ -105,27 +105,28 @@ with col1:
     industry = st.selectbox("🏭 Industry", industry_list, index=0 if st.session_state['reset'] else industry_list.index(st.session_state.get('industry', 'Select Industry')), key="industry")
 
 with col2:
-    debt_to_equity = st.number_input("📉 Debt to Equity Ratio", step=0.01, key="debt_to_equity")
-    ebitda_margin = st.number_input("💰 EBITDA Margin (%)", step=0.01, key="ebitda_margin")
-    interest_coverage = st.number_input("🧾 Interest Coverage Ratio", step=0.01, key="interest_coverage")
-    issue_size = st.number_input("📦 Issue Size (₹ Crores)", step=1.0, key="issue_size")
+    debt_to_equity = st.number_input("📉 Debt to Equity Ratio", step=0.01, value=st.session_state.get('debt_to_equity', 0.0), key="debt_to_equity")
+    ebitda_margin = st.number_input("💰 EBITDA Margin (%)", step=0.01, value=st.session_state.get('ebitda_margin', 0.0), key="ebitda_margin")
+    interest_coverage = st.number_input("🧾 Interest Coverage Ratio", step=0.01, value=st.session_state.get('interest_coverage', 0.0), key="interest_coverage")
+    issue_size = st.number_input("📦 Issue Size (₹ Crores)", step=1.0, value=st.session_state.get('issue_size', 0.0), key="issue_size")
 
 # Internally set default flag (hidden from UI)
 default_flag = 0
 
-# 8) Clear Input Button
+# 9) Clear Input Button
 if st.button("❌ Clear Inputs"):
-    st.session_state['reset'] = True  # Set reset flag
-    # Reset session state values for inputs
+    # Set reset flag and rerun the app
+    st.session_state['reset'] = True
+    # Reset the session state
     st.session_state['issuer_name'] = "Select Issuer Name"
     st.session_state['industry'] = "Select Industry"
     st.session_state['debt_to_equity'] = 0.0
     st.session_state['ebitda_margin'] = 0.0
     st.session_state['interest_coverage'] = 0.0
     st.session_state['issue_size'] = 0.0
-    st.experimental_rerun()  # Rerun the app to clear inputs
+    st.experimental_rerun()  # Rerun the app to apply reset
 
-# 9) Prediction Logic
+# 10) Prediction Logic
 st.markdown('<div style="text-align: center; margin-top: 2rem;">', unsafe_allow_html=True)
 if st.button("🔍 Predict Credit Rating"):
     try:
@@ -161,14 +162,14 @@ if st.button("🔍 Predict Credit Rating"):
         st.error(f"❌ Prediction error: {e}")
 st.markdown('</div>', unsafe_allow_html=True)
 
-# 10) Historical data
+# 11) Historical data
 st.markdown('<div class="historical-data">', unsafe_allow_html=True)
 with st.expander("📜 Show Historical Data"):
     hist_df = pd.read_csv(historical_data_path)
     st.dataframe(hist_df)
 st.markdown('</div>', unsafe_allow_html=True)
 
-# 11) Footer
+# 12) Footer
 st.markdown("""<div class="footer">
     <hr style="margin-top: 2rem; margin-bottom: 1rem;" />
     <p>🔒 Secure & Private | 🏦 Powered by ML | 💡 Created by Your Name</p>
