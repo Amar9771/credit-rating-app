@@ -111,11 +111,9 @@ with col2:
 # Internally set default flag (hidden from UI)
 default_flag = 0
 
-# 8) Clear Input Button
+# 8) Clear Input Button (Only refresh the page)
 if st.button("❌ Clear Inputs"):
-    # Clear session state and trigger a refresh by removing keys and allowing Streamlit to re-initialize
-    for key in list(st.session_state.keys()):
-        del st.session_state[key]
+    # Trigger a refresh to reset inputs
     st.experimental_rerun()  # Refresh the page
 
 # 9) Prediction Logic
