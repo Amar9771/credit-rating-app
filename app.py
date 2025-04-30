@@ -89,7 +89,7 @@ columns = [
 if not os.path.exists(historical_data_path):
     pd.DataFrame(columns=columns).to_csv(historical_data_path, index=False)
 
-# 6) Form Inputs (reset session state before inputs)
+# 6) Initialize session state variables
 if 'issuer_name' not in st.session_state:
     st.session_state['issuer_name'] = "Select Issuer Name"
 if 'industry' not in st.session_state:
@@ -123,7 +123,19 @@ with col2:
 # Internally set default flag (hidden from UI)
 default_flag = 0
 
-# 7) Prediction Logic
+# 7) Clear Input Button
+if st.button("❌ Clear Inputs"):
+    st.session_state['issuer_name'] = "Select Issuer Name"
+    st.session_state['industry'] = "Select Industry"
+    st.session_state['debt_to_equity'] = 0.0
+    st.session_state['ebitda_margin'] = 0.0
+    st.session_state['interest_coverage'] = 0.0
+    st.session_state['issue_size'] = 0.0
+
+    # Rerun the app to reset form inputs
+    st.experimental_rerun()
+
+# 8) Prediction Logic
 st.markdown('<div style="text-align: center; margin-top: 2rem;">', unsafe_allow_html=True)
 if st.button("🔍 Predict Credit Rating"):
     try:
@@ -155,30 +167,19 @@ if st.button("🔍 Predict Credit Rating"):
             })
             new_row.to_csv(historical_data_path, mode='a', header=False, index=False)
 
-            # Reset session state before inputs to clear the form
-            st.session_state['issuer_name'] = "Select Issuer Name"
-            st.session_state['industry'] = "Select Industry"
-            st.session_state['debt_to_equity'] = 0.0
-            st.session_state['ebitda_margin'] = 0.0
-            st.session_state['interest_coverage'] = 0.0
-            st.session_state['issue_size'] = 0.0
-
-            # Rerun the app to reset the form
-            st.experimental_rerun()
-
     except Exception as e:
         st.error(f"❌ Prediction error: {e}")
 st.markdown('</div>', unsafe_allow_html=True)
 
-# 8) Historical data
+# 9) Historical data
 st.markdown('<div class="historical-data">', unsafe_allow_html=True)
 with st.expander("📜 Show Historical Data"):
     hist_df = pd.read_csv(historical_data_path)
     st.dataframe(hist_df)
 st.markdown('</div>', unsafe_allow_html=True)
 
-# 9) Footer
+# 10) Footer
 st.markdown("""<div class="footer">
     <hr style="margin-top: 2rem; margin-bottom: 1rem;" />
-    <p>🔒 Secure & Private | 🏦 Powered by ML | 💡 Created</p>
+    <p>🔒 Secure & Private | 🏦 Powered by ML | 💡 Created by Your Name</p>
 </div>""", unsafe_allow_html=True)
