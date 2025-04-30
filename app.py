@@ -10,7 +10,7 @@ import os
 st.set_page_config(page_title="Credit Rating Prediction", layout="centered")
 
 # 2) Load model and encoders
-model = joblib.load("rating_model.pkl")
+model = joblib.load("credit_rating_model.pkl")
 issuer_encoder = joblib.load("issuer_encoder.pkl")
 industry_encoder = joblib.load("industry_encoder.pkl")
 rating_encoder = joblib.load("rating_encoder.pkl")
