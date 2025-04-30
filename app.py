@@ -67,7 +67,7 @@ st.markdown("""
 st.markdown("""
     <div style="text-align: center; margin-bottom: 0rem;">
         <img src="https://cdn-icons-png.flaticon.com/512/2331/2331970.png"
-             width="40" style="margin-bottom: 0px;" />
+             width="50" style="margin-bottom: 5px;" />
         <h1 style="color: #4CAF50; margin-bottom: 0.0rem; position: relative;">
             Credit Rating Predictor
             <span style="position: absolute; bottom: -1.5rem; left: 50%; transform: translateX(-50%);
