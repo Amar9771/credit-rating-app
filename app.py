@@ -8,8 +8,7 @@ import pandas as pd
 st.set_page_config(page_title="Credit Rating Predictor", layout="centered")
 
 # 2) Custom CSS
-st.markdown("""
-    <style>
+st.markdown("""<style>
     body {
         background: linear-gradient(to right, #e0f2f1, #ffffff);
         padding-top: 0;
@@ -60,12 +59,10 @@ st.markdown("""
     .historical-data {
         margin-top: 4rem;
     }
-    </style>
-""", unsafe_allow_html=True)
+    </style>""", unsafe_allow_html=True)
 
 # 3) Header
-st.markdown("""
-    <div style="text-align: center; margin-bottom: 0rem;">
+st.markdown("""<div style="text-align: center; margin-bottom: 0rem;">
         <img src="https://cdn-icons-png.flaticon.com/512/2331/2331970.png"
              width="40" style="margin-bottom: 0px;" />
         <h1 style="color: #4CAF50; margin-bottom: 0.0rem;">
@@ -74,8 +71,7 @@ st.markdown("""
         <p style="color: #666; font-size: 1.0rem; margin-top: 0;">
             Predict issuer ratings based on key financial indicators
         </p>
-    </div>
-""", unsafe_allow_html=True)
+    </div>""", unsafe_allow_html=True)
 
 # 4) Load models & encoders
 model = joblib.load('credit_rating_model.pkl')
@@ -159,7 +155,7 @@ if st.button("🔍 Predict Credit Rating"):
             })
             new_row.to_csv(historical_data_path, mode='a', header=False, index=False)
 
-            # Clear the inputs by resetting session state
+            # Reset session state before inputs to clear the form
             st.session_state['issuer_name'] = "Select Issuer Name"
             st.session_state['industry'] = "Select Industry"
             st.session_state['debt_to_equity'] = 0.0
@@ -182,9 +178,7 @@ with st.expander("📜 Show Historical Data"):
 st.markdown('</div>', unsafe_allow_html=True)
 
 # 9) Footer
-st.markdown("""
-<div class="footer">
+st.markdown("""<div class="footer">
     <hr style="margin-top: 2rem; margin-bottom: 1rem;" />
-    <p>🔒 Secure & Private | 🏦 Powered by ML | 💡 Created by Your Name</p>
-</div>
-""", unsafe_allow_html=True)
+    <p>🔒 Secure & Private | 🏦 Powered by ML | 💡 Created</p>
+</div>""", unsafe_allow_html=True)
