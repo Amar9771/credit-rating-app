@@ -195,6 +195,6 @@ st.markdown('</div>', unsafe_allow_html=True)
 st.markdown("""
 <div class="footer">
     <hr style="margin-top: 2rem; margin-bottom: 1rem;" />
-    <p>🔒 Secure & Private | 🏦 Powered by ML | 💡 Created by Your Name</p>
+    <p>🔒 Secure & Private | 🏦 Powered by ML | 💡 BWR </p>
 </div>
 """, unsafe_allow_html=True)
