@@ -114,9 +114,25 @@ if 'issue_size' not in st.session_state:
     st.session_state.issue_size = 0.0
 
 with col1:
-    issuer_name = st.text_input("🏢 Issuer Name", value=st.session_state.issuer_name)
+    # Create a dropdown with 'Other' as an option
+    issuer_name = st.selectbox(
+        "🏢 Issuer Name", 
+        sorted(list(issuer_encoder.classes_) + ['Other']),  # Add 'Other' to the dropdown list
+        index=sorted(list(issuer_encoder.classes_) + ['Other']).index(st.session_state.issuer_name)
+        if st.session_state.issuer_name in issuer_encoder.classes_ else 0
+    )
+
+    # If 'Other' is selected, allow the user to input a custom issuer name
+    if issuer_name == 'Other':
+        issuer_name = st.text_input("Please specify the Issuer Name:")
+        if not issuer_name:  # Handle case where user leaves input empty
+            st.warning("Please enter a valid Issuer Name")
+            st.stop()
+
+    # Encode industry correctly
     industry = st.selectbox("🏭 Industry", sorted(industry_encoder.classes_), index=sorted(industry_encoder.classes_).index(st.session_state.industry))
     default_flag = st.selectbox("⚠️ Default Flag", [0, 1], help="Set to 1 if issuer has defaulted, else 0", index=[0, 1].index(st.session_state.default_flag))
+
 with col2:
     debt_to_equity = st.number_input("📉 Debt to Equity Ratio", step=0.01, value=st.session_state.debt_to_equity)
     ebitda_margin = st.number_input("💰 EBITDA Margin (%)", step=0.01, value=st.session_state.ebitda_margin)
@@ -131,7 +147,8 @@ if st.button("🔍 Predict Credit Rating"):
         if issuer_name in issuer_encoder.classes_:
             issuer_idx = issuer_encoder.transform([issuer_name])[0]
         else:
-            issuer_idx = -1  # handle unknown issuer (or you could show a warning)
+            # Handle unknown issuer (or you could show a warning)
+            issuer_idx = -1
 
         # Encode industry correctly
         industry_idx = industry_encoder.transform([industry])[0]
